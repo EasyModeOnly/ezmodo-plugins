@@ -1,0 +1,18 @@
+{
+  "name": "ezmodo",
+  "description": "EzModo work tracking inside Claude Code — the MCP tool surface plus the discipline that makes an agent actually use it: create a task before you code, toggle steps as you finish them, capture what you learned, link every commit.",
+  "version": "0.13.3",
+  "author": {
+    "name": "EzModo",
+    "url": "https://ezmodo.com"
+  },
+  "homepage": "https://ezmodo.com",
+  "repository": "https://github.com/EasyModeOnly/ezmodo",
+  "license": "MIT",
+  "keywords": [
+    "project-management",
+    "mcp",
+    "task-tracking",
+    "ezmodo"
+  ]
+}

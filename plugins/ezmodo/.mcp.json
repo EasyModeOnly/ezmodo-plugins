@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ezmodo": {
+      "command": "npx",
+      "args": ["-y", "@ezmodo/mcp-server@0.13.3"],
+      "env": {
+        "EZMODO_API_KEY": "${EZMODO_API_KEY:-}",
+        "EZMODO_API_URL": "${EZMODO_API_URL:-}"
+      }
+    }
+  }
+}

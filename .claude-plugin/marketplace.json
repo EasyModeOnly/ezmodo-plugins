@@ -1,0 +1,20 @@
+{
+  "name": "ezmodo",
+  "owner": {
+    "name": "EasyModeOnly",
+    "url": "https://github.com/EasyModeOnly"
+  },
+  "metadata": {
+    "description": "Claude Code plugins published from the EzModo monorepo.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "ezmodo",
+      "source": "./plugins/ezmodo",
+      "description": "EzModo work tracking inside Claude Code — the MCP tool surface plus the discipline that makes an agent actually use it.",
+      "category": "project-management",
+      "keywords": ["project-management", "mcp", "task-tracking"]
+    }
+  ]
+}
