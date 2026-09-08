@@ -199,9 +199,19 @@ mean anyone with both gets two copies of the same ~96 tools — which is what
 retiring `ezmodo mcp install --claude-code` (#2597) is for.
 
 Both are passed through with `:-` defaults so an unset variable expands to empty
-rather than failing expansion. With no key the server exits with its own message
-naming the variable and the page to generate one on — a legible failure is worth
-more here than a server that refuses to start.
+rather than failing expansion.
+
+**You usually do not have to set `EZMODO_API_KEY` at all.** If the variable is
+unset, the server falls back to the credential `ezmodo auth login` already
+stored — the file on Linux and Windows, the Keychain on macOS — and prints which
+source it used at startup. The environment still wins when it is set, so
+overriding the key for one project works as expected. The CLI is a fallback,
+never a requirement: with neither present the server exits saying exactly which
+two places it looked and how to fix either.
+
+That fallback exists because the failure it replaces was invisible. A missing
+key made the server exit with a perfectly clear message on stderr, and all the
+user saw in `claude mcp list` was `CONNECTION_CLOSED` (#2611).
 
 The server's build-time environment defaults to **production**. Every in-repo
 caller sets `BUILD_ENV` explicitly, so an unset value means an installed copy

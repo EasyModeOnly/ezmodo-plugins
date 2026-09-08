@@ -9,8 +9,9 @@ as you finish them, capture what you learned, link every commit.
 /plugin install ezmodo@ezmodo
 ```
 
-You will need an EzModo API key from https://ezmodo.com/settings/api-keys,
-exposed to Claude Code as `EZMODO_API_KEY`. See
+You will need an EzModo API key from https://ezmodo.com/settings/api-keys.
+Either run `ezmodo auth login` — the plugin picks up the credential the CLI
+stores — or set `EZMODO_API_KEY` in your environment. See
 [`plugins/ezmodo/README.md`](plugins/ezmodo/README.md) for what the plugin
 contains and how it is configured.
 
