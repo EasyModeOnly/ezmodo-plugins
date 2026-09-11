@@ -190,8 +190,9 @@ still the tip of `main`.
 
 | Variable | Required | Meaning |
 |---|---|---|
-| `EZMODO_API_KEY` | yes | Your key from https://ezmodo.com/settings/api-keys. Does not expire. |
+| `EZMODO_API_KEY` | no | Your key from https://ezmodo.com/settings/api-keys. No expiry unless you set one. |
 | `EZMODO_API_URL` | no | Override the API base, e.g. `http://localhost:8787/api` against a local stack. |
+| `EZMODO_OAUTH_SCOPES` | no | Space-separated scopes to request at sign-in. Defaults to read + write. |
 
 The plugin's server is namespaced `plugin:ezmodo:ezmodo`, so it does not collide
 with a server the `ezmodo` CLI installed under the bare name `ezmodo`. It does
@@ -201,17 +202,31 @@ retiring `ezmodo mcp install --claude-code` (#2597) is for.
 Both are passed through with `:-` defaults so an unset variable expands to empty
 rather than failing expansion.
 
-**You usually do not have to set `EZMODO_API_KEY` at all.** If the variable is
-unset, the server falls back to the credential `ezmodo auth login` already
-stored — the file on Linux and Windows, the Keychain on macOS — and prints which
-source it used at startup. The environment still wins when it is set, so
-overriding the key for one project works as expected. The CLI is a fallback,
-never a requirement: with neither present the server exits saying exactly which
-two places it looked and how to fix either.
+**Nothing here is required.** With no variable set, the first tool call returns
+a sign-in URL; open it, approve the access, retry. The server holds the OAuth
+token from then on and refreshes it itself (#2631).
 
-That fallback exists because the failure it replaces was invisible. A missing
-key made the server exit with a perfectly clear message on stderr, and all the
-user saw in `claude mcp list` was `CONNECTION_CLOSED` (#2611).
+The credential is resolved per call, in this order:
+
+1. `EZMODO_API_KEY` — an explicit credential beats an implicit one, which is
+   what makes CI and headless machines predictable.
+2. The OAuth token this server obtained for itself.
+3. The credential `ezmodo auth login` stored, if the CLI happens to be present —
+   the file on Linux and Windows, the Keychain on macOS.
+
+OAuth ranks above the CLI's key deliberately. Both are implicit, so neither wins
+on explicitness; what separates them is that the OAuth grant is one a person saw
+and approved on a consent screen naming this connector, while the CLI's key is
+borrowed from a different program. `authenticate action:"status"` reports which
+is actually in use.
+
+The server no longer exits when it finds no credential. That was right when a
+key was the only way in, but sign-in now happens in a browser after startup, so
+a server with nothing yet is waiting rather than broken — and the exit would
+make the zero-configuration case impossible. It also means the failure that
+prompted all this is gone twice over: a missing key used to print a perfectly
+clear message to a stderr log nobody opens, and all the user saw in
+`claude mcp list` was `CONNECTION_CLOSED` (#2611).
 
 The server's build-time environment defaults to **production**. Every in-repo
 caller sets `BUILD_ENV` explicitly, so an unset value means an installed copy
