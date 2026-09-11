@@ -10,6 +10,62 @@ because the task is where the next session — or the next person — finds out 
 you learned. A task nobody created is context that only exists in a terminal
 someone is about to close.
 
+## The core
+
+<!-- mcp:core:start -->
+Work in this repository is tracked in EzModo, and the tools for it are on this
+MCP server. The contract, in short:
+
+1. **Create the task before you edit, not after.** A task written afterwards is
+   a changelog; a task written first is what the next session reads to find out
+   what you were doing and why.
+2. **Start the session by calling `get_current_project_context()`.** Cache the
+   `projectId`. It also returns the components, tags and `terminology` you need.
+   No `.ezmodo/config.json` means this repo is not tracked — say so rather than
+   guessing at a project.
+3. **Call `get_context` with a keyword query before creating anything.** Use
+   what comes back to write a task that names real files, endpoints and
+   patterns. A vague task is not worth the call that made it.
+4. **Name every component the work touches** via `componentIds`. A task spanning
+   web and api belongs to both. The list REPLACES the previous set on update.
+5. **Set `taskType`** — `feature` | `bug` | `testing` | `chore`. Not cosmetic:
+   `bug` feeds open-bug counts, milestone freezes gate on it, and estimation
+   weights past tasks of the same kind.
+6. **Toggle steps as you finish them**, not in a batch at the end
+   (`manage_task action:"update" toggleSteps:[...]`).
+7. **Capture knowledge the moment it happens**, not in a summary at the end:
+   `addKnowledge` with `fact` for a root cause, `decision` for a choice —
+   including what you rejected and why — `reference` for a key file or pattern,
+   `context` for progress. Be specific: file paths, function names, exact
+   errors. "Fixed a bug in the parser" helps nobody.
+8. **Already three edits in with no task?** Call `report_untracked_work` the
+   moment you notice, rather than continuing untracked.
+9. **Resuming?** `get_task` first, and read ALL of its knowledge items. That is
+   where the previous session's reasoning went — do not re-derive it.
+10. **Finish at `in_review`** with `completionNotes`, and do NOT call
+    `action:"complete"`. A human completes a task after verifying it.
+11. **Report what actually happened.** A task moved to `in_review` claiming work
+    that was not done is worse than no task, because the next session trusts it.
+
+Respect the project's `terminology`: a project can rename epics, tasks and
+components, and a marketing project calls an epic a "Campaign". Write anything a
+human reads in those words; keep API field names (`epicId`, `taskId`) as they
+are.
+<!-- mcp:core:end -->
+
+<!-- mcp:local:start -->
+Running against a local checkout, two more:
+
+12. **Link every commit**: `manage_task action:"link_commit"` with the full
+    40-character `sha` from `git rev-parse HEAD`. A short SHA is rejected, and
+    padding one is not a fix. Linking is also what derives component links from
+    the commit's files — do not link those by hand.
+13. **Pass `changedFiles`** when creating or updating a task, so the work
+    resolves to the components that own those paths.
+<!-- mcp:local:end -->
+
+The sections below are the same contract in full.
+
 ## Session initialization
 
 1. Check that `.ezmodo/config.json` exists. (A legacy `.zephly/config.json` is
