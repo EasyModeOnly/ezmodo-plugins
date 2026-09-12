@@ -163,8 +163,14 @@ already failed.
 `.mcp.json` launches the server from npm at an exact version:
 
 ```json
-{ "command": "npx", "args": ["-y", "@ezmodo/mcp-server@0.12.9"] }
+{ "command": "npx", "args": ["-y", "-p", "@ezmodo/mcp-server@0.14.1", "ezmodo-mcp-server"] }
 ```
+
+The `-p … ezmodo-mcp-server` is required, not decoration. The package ships
+several bins, and npx will only run a multi-bin package without `-p` when one of
+them is named after the package. Through 0.14.1 none was, so the short form
+`npx -y @ezmodo/mcp-server@X` failed with `could not determine executable to run`
+and the plugin's server never started (#2653).
 
 It is **not** bundled in this directory, and it cannot be. Installing a plugin
 copies only the plugin's own subtree into `~/.claude/plugins/cache/`, so the
