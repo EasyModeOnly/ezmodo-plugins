@@ -9,9 +9,10 @@ as you finish them, capture what you learned, link every commit.
 /plugin install ezmodo@ezmodo
 ```
 
-You will need an EzModo API key from https://ezmodo.com/settings/api-keys.
-Either run `ezmodo auth login` — the plugin picks up the credential the CLI
-stores — or set `EZMODO_API_KEY` in your environment. See
+No key is needed. The first EzModo tool call hands back a sign-in link; approve
+it in a browser and retry. For CI or anything headless, set `EZMODO_API_KEY` to a
+key from https://ezmodo.com/settings/api-keys instead. The server's source is
+mirrored at [`EasyModeOnly/ezmodo-mcp-server`](https://github.com/EasyModeOnly/ezmodo-mcp-server). See
 [`plugins/ezmodo/README.md`](plugins/ezmodo/README.md) for what the plugin
 contains and how it is configured.
 
