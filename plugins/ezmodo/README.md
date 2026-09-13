@@ -137,6 +137,14 @@ they have something to say.
 just watched `[branch 9b5d893]` scroll past will reach for those seven
 characters.
 
+**It resolves the SHA in the repo the commit ran in**, not the session's
+directory (#2658). `cd ../infra && git commit` and `git -C ../infra commit` are
+followed (quote- and heredoc-aware, so a commit *message* mentioning `cd` cannot
+steer it), and the HEAD, branch and active task all come from that repo. It used
+to report the session repo's HEAD for such a commit, stated as fact — the one
+thing this hook exists to make trustworthy. `resolveCommitDir` in `lib.js`;
+tests in `mcp-server/__tests__/plugin-hooks.test.js`, where CI runs them.
+
 **The edit hook reads `.ezmodo/active-session.json`**, which the MCP server
 already writes on an `in_progress` transition and clears on completion. Reading
 what EzModo actually believes beats a hook keeping state of its own.
@@ -150,6 +158,8 @@ every path exits 0, and every one of these is silent:
 - no `.ezmodo/config.json` anywhere up the tree (not an EzModo repo)
 - unparseable or absent hook payload
 - a `Bash` call that is not a commit; a commit with no resolvable `HEAD`
+- a commit whose directory cannot be known without running a shell —
+  `cd "$(…)"`, `cd $SOME_VAR`, `cd -`, `--git-dir` — rather than guess
 - an edit to `.ezmodo/` or `.zephly/` itself, or to a path outside the repo
 - an edit while a task **is** active
 - the second and every later untracked edit in one session

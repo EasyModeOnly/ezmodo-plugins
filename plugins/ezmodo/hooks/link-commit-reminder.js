@@ -14,22 +14,25 @@
  */
 
 import { execFileSync } from 'child_process';
-import { findConfigDir, readActiveSession, readPayload, emit } from './lib.js';
+import { findConfigDir, readActiveSession, readPayload, emit, resolveCommitDir } from './lib.js';
 
 const payload = readPayload();
 if (!payload) process.exit(0);
 
 const command = payload.tool_input?.command ?? '';
-// `git commit` anywhere in the command line, including `cd x && git commit`.
-// Deliberately loose: a missed reminder costs nothing, and the model can see
-// for itself whether a commit happened.
-if (!/\bgit\s+(?:-\S+\s+)*commit\b/.test(command)) process.exit(0);
+// Cheap pre-filter; resolveCommitDir below is the real test.
+if (!/\bgit\b[\s\S]*\bcommit\b/.test(command)) process.exit(0);
 
 // A failed commit has nothing to link.
 const response = payload.tool_response ?? {};
 if (response.interrupted === true) process.exit(0);
 
-const cwd = payload.cwd ?? process.cwd();
+// Where the commit RAN, not where the session is (#2658). `cd ../other && git
+// commit` used to be reported against the session repo's HEAD and active task.
+// Null means the command line could not be read with confidence, and a SHA
+// from the wrong repo stated as fact is worse than no reminder, so say nothing.
+const cwd = resolveCommitDir(command, payload.cwd ?? process.cwd());
+if (!cwd) process.exit(0);
 const configDir = findConfigDir(cwd);
 if (!configDir) process.exit(0); // Not an EzModo repo — say nothing.
 
