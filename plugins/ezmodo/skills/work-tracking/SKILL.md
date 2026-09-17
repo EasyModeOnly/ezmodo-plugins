@@ -20,14 +20,15 @@ MCP server. The contract, in short:
    a changelog; a task written first is what the next session reads to find out
    what you were doing and why.
 2. **Start the session by calling `get_current_project_context()`.** Cache the
-   `projectId`. It also returns the components, tags and `terminology` you need.
+   `projectId`. It also returns the tags and `terminology` you need.
    No `.ezmodo/config.json` means this repo is not tracked — say so rather than
    guessing at a project.
 3. **Call `get_context` with a keyword query before creating anything.** Use
    what comes back to write a task that names real files, endpoints and
    patterns. A vague task is not worth the call that made it.
-4. **Name every component the work touches** via `componentIds`. A task spanning
-   web and api belongs to both. The list REPLACES the previous set on update.
+4. **Link the feature the work advances** via `links: [{targetType:"feature",
+   targetId}]`, found with `search_features`. Code links are derived: features
+   own code paths, and the files you touch link the work to their owners.
 5. **Set `taskType`** — `feature` | `bug` | `testing` | `chore`. Not cosmetic:
    `bug` feeds open-bug counts, milestone freezes gate on it, and estimation
    weights past tasks of the same kind.
@@ -47,8 +48,8 @@ MCP server. The contract, in short:
 11. **Report what actually happened.** A task moved to `in_review` claiming work
     that was not done is worse than no task, because the next session trusts it.
 
-Respect the project's `terminology`: a project can rename epics, tasks and
-components, and a marketing project calls an epic a "Campaign". Write anything a
+Respect the project's `terminology`: a project can rename epics and tasks, and a
+marketing project calls an epic a "Campaign". Write anything a
 human reads in those words; keep API field names (`epicId`, `taskId`) as they
 are.
 <!-- mcp:core:end -->
@@ -58,10 +59,10 @@ Running against a local checkout, two more:
 
 12. **Link every commit**: `manage_task action:"link_commit"` with the full
     40-character `sha` from `git rev-parse HEAD`. A short SHA is rejected, and
-    padding one is not a fix. Linking is also what derives component links from
+    padding one is not a fix. Linking is also what derives feature links from
     the commit's files — do not link those by hand.
 13. **Pass `changedFiles`** when creating or updating a task, so the work
-    resolves to the components that own those paths.
+    resolves to the features that own those paths.
 <!-- mcp:local:end -->
 
 The sections below are the same contract in full.
@@ -72,14 +73,13 @@ The sections below are the same contract in full.
    still read; `ezmodo migrate-config` relocates it.) No config means this repo
    is not tracked — say so rather than guessing at a project.
 2. Call `get_current_project_context()` and cache the `projectId` for the
-   session. It also returns the components, tags and `terminology` you will need.
+   session. It also returns the tags and `terminology` you will need.
 3. If the user named an existing task or epic, load it directly with `get_task` /
    `get_epic` and resume via **Context recovery** below.
 4. Otherwise create a task before you edit anything.
 
-**Respect the project's `terminology`.** A project can rename epics, tasks and
-components, and their statuses — a marketing project calls an epic a "Campaign"
-and a component a "Channel". Write anything a human reads in those words. Keep
+**Respect the project's `terminology`.** A project can rename epics and tasks,
+and their statuses — a marketing project calls an epic a "Campaign". Write anything a human reads in those words. Keep
 the API field names (`epicId`, `taskId`) exactly as they are. A null
 `terminology` means plain English, not an error.
 
@@ -96,8 +96,9 @@ This is the difference between a task worth reading later and one that is not:
   codebase).
 - **Steps** name files. "Add rate-limit middleware to the manifest route in
   `api/internal/api/router.go` (line ~243)" — not "Add rate limiter".
-- **`componentIds`** covers every component the work touches, from
-  `get_current_project_context()`. Not one, all of them.
+- **`links`** names the feature the work advances (`search_features` finds the
+  existing capability). Code links need nothing from you: pass `changedFiles`
+  and the files resolve to the features that own them.
 
 ## Single-scope work
 
@@ -108,25 +109,27 @@ manage_task action:"create"
   projectId       (cached)
   title, description   (informed by get_context)
   steps           (actionable, file-specific)
-  componentIds    (every component touched — see below)
+  links           ([{targetType:"feature", targetId}] — the capability it advances)
+  changedFiles    (paths you expect to touch — see below)
   priority        low | medium | high | urgent
   taskType        feature | bug | testing | chore
   status:"in_progress"   (work is starting now)
 ```
 
-**`componentIds` replaces the set on update.** Pass the full list every time; an
-empty array clears it. A task spanning web and api belongs to both — the older
-single `componentId` could only ever record one of them, which is why it is
-deprecated.
+**`changedFiles` is how code gets linked.** Each path resolves to the feature
+that owns it through that feature's code paths. A path one feature owns links
+automatically; a path several features share comes back as a `linkSuggestion`
+for you to accept or reject. A path no feature owns links to nothing — that is a
+gap in the feature map, not a reason to invent a feature.
 
-**`taskType` is not cosmetic.** `bug` feeds per-area open-bug counts, milestone
+**`taskType` is not cosmetic.** `bug` feeds open-bug counts, milestone
 freezes gate on it, and estimation weights past tasks of the same kind. Omitted,
 the task is stored as `feature`.
 
 ## Multi-scope work
 
-A feature spanning several areas, or a large refactor: call `get_context` once
-per area to find the integration points, then create the epic **with its child
+Work spanning several parts of the codebase (api and web, say), or a large
+refactor: call `get_context` once per part to find the integration points, then create the epic **with its child
 tasks in the same request** — `manage_epic action:"create"` takes a `tasks` array
 of up to 40. One request, and a failure part-way can no longer leave an epic with
 no tasks. Order the tasks by dependency.
@@ -168,8 +171,8 @@ in before you notice. **The moment you notice**, call `report_untracked_work`
 rather than continuing untracked. It creates the task `in_progress` and returns
 it; track against that for the rest of the work.
 
-Pass `projectId` and `title`, plus `branch`, `changedFiles` and `componentId`
-when you know them, and set `origin`:
+Pass `projectId` and `title`, plus `branch` and `changedFiles` when you know
+them, and set `origin`:
 
 - `discovered` — found while working on another task (with `discoveredDuringTaskId`)
 - `scope-creep` — went beyond the active task's scope (with `discoveredDuringTaskId`)
@@ -197,9 +200,9 @@ manage_task action:"link_commit"
 `sha` must be the full 40-character hash — `git rev-parse HEAD`. A short SHA is
 rejected, and padding one is not a fix.
 
-Linking a commit is also what triggers automatic component linking: the API
-resolves the commit's files against `components.source_path` and records those
-links itself. Do not link those by hand. See the **EzModo Link Upkeep** skill for
+Linking a commit is also what triggers automatic feature linking: the API
+resolves the commit's files against the code paths features own and records
+those links itself. Do not link those by hand. See the **EzModo Link Upkeep** skill for
 what you *do* owe.
 
 ## Completion

@@ -107,7 +107,7 @@ drift:
 | Skill | Fires when | Covers |
 |---|---|---|
 | `work-tracking` | starting, resuming or finishing work in a repo with `.ezmodo/config.json` | session init, create-before-you-edit, step toggling, knowledge capture, `report_untracked_work`, context recovery, `link_commit`, completion → `in_review` |
-| `link-upkeep` | work touches a component, or a response returns `linkSuggestions` | `resolve_links`, resolving suggestions with reasons, link provenance, derived-beats-asserted, derived navigation, the feature axis |
+| `link-upkeep` | work touches files a feature owns, or a response returns `linkSuggestions` | `resolve_links`, resolving suggestions with reasons, feature code paths, link provenance, derived-beats-asserted, derived navigation on the screens catalog, the feature axis |
 | `db-schema-snapshot` | a migration is added or changed | finding the `kind:"db_schema"` catalog, patch vs replace, why replace is expensive, snapshotting every namespace |
 
 They resolve project identity at runtime through

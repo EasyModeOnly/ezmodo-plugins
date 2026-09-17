@@ -16,9 +16,6 @@ Use `report_untracked_work` with:
   are appended automatically as evidence.
 - `changedFiles` — the paths above
 - `branch` — as above
-- `componentIds` — resolve the changed paths with `resolve_links` rather than
-  guessing; untracked work often spans more than one area, which is part of why
-  it went untracked
 - `origin`:
   - `discovered` — found while working on another task (set `discoveredDuringTaskId`)
   - `scope-creep` — went beyond the active task's scope (set `discoveredDuringTaskId`)

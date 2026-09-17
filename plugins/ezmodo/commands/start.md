@@ -7,19 +7,20 @@ Start tracked work on: **$ARGUMENTS**
 
 Follow the **EzModo Work Tracking** skill. In short:
 
-1. `get_current_project_context()` — cache the `projectId`, note the components,
-   tags and `terminology`.
+1. `get_current_project_context()` — cache the `projectId`, note the tags and
+   `terminology`.
 2. `get_context` with a keyword query drawn from the request above. Read what
    comes back before writing anything: it tells you which files exist, what
    patterns they follow, and what the change will touch.
-3. `resolve_links` on the paths you expect to change. A component you did not
+3. `resolve_links` on the paths you expect to change. A feature you did not
    expect means the work is broader than the request sounds.
 4. Create the work:
    - **Single scope** (a fix, a small feature, a config or docs change) —
      `manage_task action:"create"` with `status:"in_progress"`, a description
-     that says why/where/how, steps that name real files, `componentIds` for
-     every component involved, and the right `taskType`.
-   - **Multi scope** (spanning areas, or a large refactor) — `manage_epic
+     that says why/where/how, steps that name real files, `changedFiles` for
+     the paths involved, a `links` entry for the feature it advances, and the
+     right `taskType`.
+   - **Multi scope** (spanning several parts of the codebase, or a large refactor) — `manage_epic
      action:"create"` with its child tasks in the same request, ordered by
      dependency.
 
