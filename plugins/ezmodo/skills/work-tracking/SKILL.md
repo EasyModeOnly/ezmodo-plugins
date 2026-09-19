@@ -134,6 +134,38 @@ tasks in the same request** — `manage_epic action:"create"` takes a `tasks` ar
 of up to 40. One request, and a failure part-way can no longer leave an epic with
 no tasks. Order the tasks by dependency.
 
+## Choices that need other people: decisions to make
+
+Planning an epic keeps turning up choices you should not settle alone ("who
+reviews changes?", "do approved plans freeze?"). Don't answer them in your own
+chat, and don't bury them in a task description where nobody else sees them.
+Put each one **on the epic** as a decision to make:
+
+```
+manage_decision action:"create" organizationId:… epicId:…
+  title:"Who reviews proposals"
+  question:"Who should review changes to the plan?"
+  choices:["The owner only", "The owner and editors", "Anyone on the project"]
+  recommendation:"The owner and editors, so reviews don't stall when the owner is away."
+  requestedFrom:[<user ids of the people whose view is wanted>]
+```
+
+Write the question, options and recommendation in plain language a
+non-developer can answer. The people named are notified.
+
+- **Tasks that can't start until it's answered:** `action:"hold_task"` with the
+  task id. The task is blocked, and released when the decision is made.
+- **Your person has a view:** `action:"add_input"` with `choiceId` and a
+  one-line `reason`. It counts as their pick and replaces an earlier one.
+- **Deciding** (`action:"decide"`) is for the epic's owner or an editor. Only
+  decide when your person is one and asked you to; pass `rejectedReasons` so
+  the options turned down keep why.
+- **What's still open:** `get_decision epicId:… status:"proposed"` shows each
+  open decision with everyone's picks.
+
+Approving a plan while decisions are open is allowed, but the save comes back
+with a `warnings` sentence. Pass it on to your person rather than dropping it.
+
 ## During the work
 
 **Toggle each step as you finish it**, not in a batch at the end:
