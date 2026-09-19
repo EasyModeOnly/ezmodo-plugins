@@ -166,6 +166,10 @@ non-developer can answer. The people named are notified.
 Approving a plan while decisions are open is allowed, but the save comes back
 with a `warnings` sentence. Pass it on to your person rather than dropping it.
 
+**Only the epic's owner, its creator or an org admin can save its plan.** If
+your person is none of those, `update_epic_plan` is refused: suggest the change
+with `add_epic_comment`, or ask it as a decision to make, instead.
+
 ## During the work
 
 **Toggle each step as you finish it**, not in a batch at the end:
@@ -218,7 +222,14 @@ them, and set `origin`:
 3. Read **all** the knowledge items — that is where the previous session's
    reasoning went.
 4. Look for `progress-checkpoint` knowledge for the latest status.
-5. Continue from there.
+5. **If the task belongs to an epic other people also work on**, call
+   `get_epic_activity epicId:…` first. It says, in plain sentences, what
+   changed since your person last looked: decisions waiting on their view,
+   comments that mention or answer them, decisions made, new plan versions and
+   task progress. Tell your person what matters in it before carrying on, and
+   read the plan again before changing it. It marks the epic as caught up, so
+   the next call only shows newer changes.
+6. Continue from there.
 
 ## Commit linking
 
