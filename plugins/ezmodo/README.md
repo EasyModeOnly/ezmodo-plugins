@@ -170,11 +170,20 @@ already failed.
 
 ## The MCP server
 
-`.mcp.json` launches the server from npm at an exact version:
+`.mcp.json` launches the latest approved server from npm:
 
 ```json
-{ "command": "npx", "args": ["-y", "-p", "@ezmodo/mcp-server@0.14.1", "ezmodo-mcp-server"] }
+{ "command": "npx", "args": ["-y", "-p", "@ezmodo/mcp-server@latest", "ezmodo-mcp-server"] }
 ```
+
+`@latest` rather than an exact version (#2807): npx re-checks the tag with the
+registry on every launch, so a new server reaches you the next time Claude Code
+starts, without a plugin update. Third-party marketplaces don't auto-update
+plugins by default, so an exact pin left people on old servers until they ran
+`claude plugin update`. Releases are staged on npm and need a maintainer's
+approval before `latest` moves, so you only ever get an approved version. A
+plugin update is still how new skills and hooks arrive. To get those
+automatically too: `/plugin` → Marketplaces → ezmodo → Enable auto-update.
 
 The `-p … ezmodo-mcp-server` is required, not decoration. The package ships
 several bins, and npx will only run a multi-bin package without `-p` when one of
@@ -191,8 +200,9 @@ plugin cannot install; npm needs neither.
 
 `@ezmodo/mcp-server` is published by `.github/workflows/mcp-server-publish.yml`
 when a version bump reaches `main`. That workflow refuses to publish if this
-file's pin and the package version disagree — otherwise the plugin would ask npm
-for a version that does not exist and every tool call would fail with a 404.
+file stops launching `@latest`, since an exact pin would quietly freeze every
+user on that version. It also refuses if `plugin.json` names a different
+version, because the plugin mirror is held until that version is installable.
 
 It authenticates with **Trusted Publishing (OIDC)**, so there is no npm token in
 the repo to rotate or leak. Two things that are easy to get wrong if you touch
