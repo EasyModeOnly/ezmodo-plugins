@@ -18,7 +18,8 @@ Work through, in order:
    (`decision`), blockers (`fact`). Specific: file paths, function names, exact
    error messages.
 3. **Commits** — `link_commit` for every commit not yet linked, using the full
-   40-character SHA above. A short SHA is rejected.
+   40-character SHA above. A short SHA is rejected. Then write summaries for any
+   `manifest.needsSummary` paths it returns with `update_manifest_entries`.
 4. **Link suggestions** — check `list_agent_suggestions action:"link"` for this
    task and clear the queue with `resolve_link_suggestions`. Reject with a real
    reason; leaving them pending is the only wrong outcome. See the **EzModo Link

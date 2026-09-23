@@ -66,5 +66,6 @@ emit(
     '',
     `Call manage_task action:"link_commit" against ${target}.`,
     'Use the full 40-character sha above — a shortened one is rejected.',
+    'Then summarise any manifest.needsSummary paths it returns with update_manifest_entries.',
   ].join('\n')
 );

@@ -60,7 +60,9 @@ Running against a local checkout, two more:
 12. **Link every commit**: `manage_task action:"link_commit"` with the full
     40-character `sha` from `git rev-parse HEAD`. A short SHA is rejected, and
     padding one is not a fix. Linking is also what derives feature links from
-    the commit's files — do not link those by hand.
+    the commit's files — do not link those by hand. It also updates the
+    project's context manifest; write a summary for every path in the
+    response's `manifest.needsSummary` with `update_manifest_entries`.
 13. **Pass `changedFiles`** when creating or updating a task, so the work
     resolves to the features that own those paths.
 <!-- mcp:local:end -->
@@ -247,6 +249,25 @@ Linking a commit is also what triggers automatic feature linking: the API
 resolves the commit's files against the code paths features own and records
 those links itself. Do not link those by hand. See the **EzModo Link Upkeep** skill for
 what you *do* owe.
+
+### Keeping the context manifest current
+
+`link_commit` also applies the commit to the project's context manifest in the
+API, using the commit's git name-status. Deleted files lose their entries,
+renames keep their summaries, and new files get an entry. There is no CI job
+behind this any more, so this step is the only thing that keeps the manifest
+current. The response carries a `manifest` object:
+
+- `needsSummary`: paths whose entry has no summary. Write one for each with
+  `update_manifest_entries` (`updates: [{path, summary}]`), in under 200 words
+  covering intent, key behaviours, integrations and gotchas. You just wrote the
+  file, so you are the cheapest source of that summary that will ever exist.
+- `reviewSummary`: modified files that already have a summary. Rewrite one only
+  if the commit changed what the file *does*, not merely how.
+- `skipped`: the project has no manifest yet. Nothing to do; a full manifest
+  comes from the desktop app.
+
+Pass `updateManifest: false` to link a commit without touching the manifest.
 
 ## Completion
 
