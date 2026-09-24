@@ -71,7 +71,7 @@ The sections below are the same contract in full.
 
 ## Session initialization
 
-1. Check that `.ezmodo/config.json` exists. (A pre-rebrand `.zephly/` directory
+1. Check that `.ezmodo/config.json` exists. (A pre-rebrand config directory
    is no longer read; `ezmodo migrate-config` relocates it.) No config means this
    repo is not tracked — say so rather than guessing at a project.
 2. Call `get_current_project_context()` and cache the `projectId` for the

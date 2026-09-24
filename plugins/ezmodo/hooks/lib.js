@@ -12,7 +12,7 @@ import { existsSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { dirname, join, resolve } from 'path';
 
-// The repo's EzModo config dir. The pre-rebrand `.zephly/` is no longer read
+// The repo's EzModo config dir. The pre-rebrand config dir is no longer read
 // (#2843) — same as mcp-server/lib/repo-config-dir.js.
 const CONFIG_DIR = '.ezmodo';
 
