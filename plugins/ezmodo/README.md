@@ -160,7 +160,7 @@ every path exits 0, and every one of these is silent:
 - a `Bash` call that is not a commit; a commit with no resolvable `HEAD`
 - a commit whose directory cannot be known without running a shell —
   `cd "$(…)"`, `cd $SOME_VAR`, `cd -`, `--git-dir` — rather than guess
-- an edit to `.ezmodo/` or `.zephly/` itself, or to a path outside the repo
+- an edit to `.ezmodo/` itself, or to a path outside the repo
 - an edit while a task **is** active
 - the second and every later untracked edit in one session
 

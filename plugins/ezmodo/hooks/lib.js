@@ -12,17 +12,15 @@ import { existsSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { dirname, join, resolve } from 'path';
 
-// `.ezmodo/` is current; `.zephly/` is the pre-rebrand name still present in
-// existing checkouts. Readers must accept both — see mcp-server/lib/repo-config-dir.js.
-const CONFIG_DIRS = ['.ezmodo', '.zephly'];
+// The repo's EzModo config dir. The pre-rebrand `.zephly/` is no longer read
+// (#2843) — same as mcp-server/lib/repo-config-dir.js.
+const CONFIG_DIR = '.ezmodo';
 
 /** Walk up from `startDir` for the repo's EzModo config dir. Null if none. */
 export function findConfigDir(startDir) {
   let dir = startDir;
   for (;;) {
-    for (const name of CONFIG_DIRS) {
-      if (existsSync(join(dir, name, 'config.json'))) return join(dir, name);
-    }
+    if (existsSync(join(dir, CONFIG_DIR, 'config.json'))) return join(dir, CONFIG_DIR);
     const parent = dirname(dir);
     if (parent === dir) return null;
     dir = parent;

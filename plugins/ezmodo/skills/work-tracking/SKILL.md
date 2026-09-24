@@ -71,9 +71,9 @@ The sections below are the same contract in full.
 
 ## Session initialization
 
-1. Check that `.ezmodo/config.json` exists. (A legacy `.zephly/config.json` is
-   still read; `ezmodo migrate-config` relocates it.) No config means this repo
-   is not tracked — say so rather than guessing at a project.
+1. Check that `.ezmodo/config.json` exists. (A pre-rebrand `.zephly/` directory
+   is no longer read; `ezmodo migrate-config` relocates it.) No config means this
+   repo is not tracked — say so rather than guessing at a project.
 2. Call `get_current_project_context()` and cache the `projectId` for the
    session. It also returns the tags and `terminology` you will need.
 3. If the user named an existing task or epic, load it directly with `get_task` /

@@ -29,7 +29,7 @@ const filePath = payload.tool_input?.file_path ?? payload.tool_input?.notebook_p
 if (filePath) {
   const rel = isAbsolute(filePath) ? relative(cwd, filePath) : filePath;
   if (rel.startsWith('..')) process.exit(0); // Outside the repo.
-  if (/(^|\/)\.(ezmodo|zephly)\//.test(rel)) process.exit(0);
+  if (/(^|\/)\.ezmodo\//.test(rel)) process.exit(0);
 }
 
 if (readActiveSession(configDir)) process.exit(0); // Tracked. Nothing to say.
