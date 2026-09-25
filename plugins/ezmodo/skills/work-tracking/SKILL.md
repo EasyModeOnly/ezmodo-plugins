@@ -284,6 +284,26 @@ Pass `updateManifest: false` to link a commit without touching the manifest.
    the task after verifying it.
 5. Working under an epic? Update the epic's status when its children are done.
 
+## Releases
+
+A **milestone** is the release target (v1.4.0). A **release candidate** is one
+build of it (`1.4.0-rc.2`, optional commit SHA). When the work you did is going
+out:
+
+- Ask `get_release_readiness` (`candidateId` + `environment`) what is blocking
+  it, before you claim something is ready. Every row has a reason, and
+  `nextAction` names the single next step.
+- Tie test runs to the build: `manage_test_suite action:"start_run"` and
+  `manage_test_case action:"record_run"` take `releaseCandidateId`. A run with
+  no candidate does not count toward a candidate's gates.
+- Pipelines report through `manage_release action:"report_check"` /
+  `"report_deployment"` (or `ezmodo release report`). Nothing assumes GitHub.
+- A promotion or `manage_milestone action:"release"` is **refused** while a
+  required gate fails. Do not look for a way around it. Fix the gate, or — only
+  when a person has decided the release goes out incomplete — `manage_release
+  action:"waive"` with the reason they gave. "Hidden behind flag X" is verified:
+  the waiver does not hold while the flag is on in that environment.
+
 ## Where this stops
 
 Report what actually happened. A task moved to `in_review` with notes claiming
