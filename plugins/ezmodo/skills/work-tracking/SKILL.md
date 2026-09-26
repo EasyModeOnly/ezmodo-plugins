@@ -303,6 +303,11 @@ out:
   when a person has decided the release goes out incomplete — `manage_release
   action:"waive"` with the reason they gave. "Hidden behind flag X" is verified:
   the waiver does not hold while the flag is on in that environment.
+- Setting up a project's release process: read what is there first
+  (`manage_release action:"list_gates"`, `"list_templates"`, `"get_settings"`).
+  Steps are reminders until their phase blocks a promotion — a
+  `checklist_phase` gate with `params.phase` on that environment.
+  `"add_recommended_gates"` fills in whatever each environment is missing.
 
 ## Where this stops
 
