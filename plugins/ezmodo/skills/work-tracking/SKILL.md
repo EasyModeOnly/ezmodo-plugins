@@ -303,6 +303,14 @@ out:
   when a person has decided the release goes out incomplete — `manage_release
   action:"waive"` with the reason they gave. "Hidden behind flag X" is verified:
   the waiver does not hold while the flag is on in that environment.
+- A project that ships several things on their own version lines (api, web,
+  desktop) has **deliverables** (`manage_deliverable`). A release is a
+  deliverable at a version: name it as `deliverable` + `version` on
+  `get_release_readiness`, `manage_release` (`create_candidate`,
+  `report_check`, `report_deployment`, `get_release`, `get_contents`…) and
+  `ezmodo release … --deliverable api --version 0.1.0`. Deliverables are a
+  release axis only: never link work to one. Work reaches a deliverable
+  through a release's contents; a task links to the feature it advances.
 - Setting up a project's release process: read what is there first
   (`manage_release action:"list_gates"`, `"list_templates"`, `"get_settings"`).
   Steps are reminders until their phase blocks a promotion — a
