@@ -277,12 +277,29 @@ Pass `updateManifest: false` to link a commit without touching the manifest.
    `originTaskId`, `title`, `description`, `category`, `priority`, `steps`
    (`{instruction, expectedResult}`) and any `preconditions`. Aim for 3-6 cases
    covering the happy path, edge cases and error handling.
-3. `manage_task action:"update"` with `status:"in_review"` and
+3. **Write the task's "how it works"** with `manage_task
+   action:"apply_how_it_works"`. You just did the work, so you can say what it
+   does better than a model reading it afterwards, and it costs the user
+   nothing. Pass `markdown` (what the change does now and how, in a few short
+   plain paragraphs) and `sources`: `claims`, each citing the refs that back it,
+   plus `divergences` wherever the result differs from what the task set out to
+   do. Cite refs exactly as the server writes them — `task:<taskId>`,
+   `commit:<full 40-char sha>` for a linked commit, `file:<path>` for a linked
+   file. The server keeps only refs the task's grounded context holds: it drops
+   any other ref and marks a claim left with none `unverified`, so read the
+   response and fix what it downgraded. Skip this for a task with nothing to
+   describe (no code, no linked work). Do not call `generate_how_it_works`; that
+   spends the user's AI quota on a summary you can write yourself.
+4. `manage_task action:"update"` with `status:"in_review"` and
    `completionNotes` summarising what was accomplished — including anything you
    did **not** do, and why.
-4. **Do not call `manage_task action:"complete"`.** A human reviewer completes
+5. **Do not call `manage_task action:"complete"`.** A human reviewer completes
    the task after verifying it.
-5. Working under an epic? Update the epic's status when its children are done.
+6. Working under an epic? Update the epic's status when its children are done,
+   and when the last one finishes, write the epic's how-it-works the same way
+   with `manage_epic action:"apply_how_it_works"` (refs: `epic:<epicId>`,
+   `task:<childId>`, `commit:<sha>`). If the work changed what a feature does,
+   refresh that feature's with `manage_feature action:"apply_how_it_works"`.
 
 ## Releases
 
