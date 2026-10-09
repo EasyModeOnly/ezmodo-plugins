@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 /**
- * PostToolUse(Bash) — after a successful `git commit`, hand the model the full
- * SHA and remind it to link the commit.
+ * PostToolUse(Bash|PowerShell) — after a successful `git commit`, hand the
+ * model the full SHA and remind it to link the commit.
+ *
+ * PowerShell is the shell tool Claude Code uses on Windows when Git Bash is
+ * absent or CLAUDE_CODE_USE_POWERSHELL_TOOL is set (#3128); its commits need
+ * linking as much as Bash's.
  *
  * Two rules in the work-tracking skill are the ones most often forgotten,
  * because nothing enforces them. This is the first: link_commit after every

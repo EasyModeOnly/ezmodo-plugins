@@ -31,6 +31,12 @@ claude plugin validate --strict plugins/ezmodo   # the plugin manifest
 claude plugin validate --strict .                # the marketplace manifest
 ```
 
+CI does both, then installs the plugin from this marketplace into a throwaway
+HOME and checks `claude mcp list` reports the server connected and every hook
+command runs, on Windows, macOS and Linux, with no model call
+(`.github/workflows/plugin-smoke.yml`, `scripts/ci/plugin-smoke.mjs`, #3135).
+It runs on PRs touching the plugin, and the public plugin mirror waits on it.
+
 ## Where this is published
 
 Customers install from **`EasyModeOnly/ezmodo-plugins`**, a public repo that
@@ -126,7 +132,7 @@ a skill can do. These notice instead:
 
 | Hook | Fires on | Says |
 |---|---|---|
-| `link-commit-reminder` | `PostToolUse(Bash)` matching a `git commit` | the full 40-char SHA, branch and subject, plus the active task's id — so `link_commit` needs no guesswork |
+| `link-commit-reminder` | `PostToolUse(Bash\|PowerShell)` matching a `git commit` | the full 40-char SHA, branch and subject, plus the active task's id — so `link_commit` needs no guesswork |
 | `untracked-edit-reminder` | `PostToolUse(Edit\|Write\|MultiEdit\|NotebookEdit)` | that code was edited with no active task, once per session |
 
 Both cost nothing in model context — they run in the harness and speak only when
@@ -144,6 +150,22 @@ steer it), and the HEAD, branch and active task all come from that repo. It used
 to report the session repo's HEAD for such a commit, stated as fact — the one
 thing this hook exists to make trustworthy. `resolveCommitDir` in `lib.js`;
 tests in `mcp-server/__tests__/plugin-hooks.test.js`, where CI runs them.
+
+**Windows is read as well as POSIX** (#3128). Claude Code on Windows runs
+commands through Git Bash or its PowerShell tool, and a user's habits bring
+cmd.exe forms too, so the commit hook follows `cd /c/work` (Git Bash),
+`cd /d D:\work` and `&` (cmd.exe), `Set-Location`/`Push-Location` and
+`& git.exe` (PowerShell), and `$env:USERPROFILE`/`%USERPROFILE%` as home, and
+resolves them with the platform's path rules. The edit hook compares paths
+with separators normalised, so `.ezmodo\` is recognised on Windows. The
+commands in `hooks.json` stay `node "${CLAUDE_PLUGIN_ROOT}/…"`: Claude Code
+substitutes the variable before any shell sees it, and a double-quoted
+argument means the same in sh, cmd.exe and PowerShell. The exec form
+(`"args": [...]`) was not used, because a Claude Code too old to know it runs
+a bare `node` that reads the hook payload as a script. The tests pin
+`path.posix` or `path.win32` per case, so they check both rule sets on any OS;
+the plugin CI (`plugin-smoke.yml`) also runs them, and the hook commands
+through bash, cmd.exe and PowerShell, on Windows, macOS and Linux.
 
 **The edit hook reads `.ezmodo/active-session.json`**, which the MCP server
 already writes on an `in_progress` transition and clears on completion. Reading

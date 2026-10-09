@@ -14,8 +14,15 @@
 
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join, relative, isAbsolute } from 'path';
-import { findConfigDir, readActiveSession, readPayload, emit } from './lib.js';
+import { join } from 'path';
+import {
+  findConfigDir,
+  readActiveSession,
+  readPayload,
+  emit,
+  repoRelativePath,
+  isConfigDirPath,
+} from './lib.js';
 
 const payload = readPayload();
 if (!payload) process.exit(0);
@@ -27,9 +34,9 @@ if (!configDir) process.exit(0); // Not an EzModo repo — say nothing.
 // Editing EzModo's own config or session files is not "work on the codebase".
 const filePath = payload.tool_input?.file_path ?? payload.tool_input?.notebook_path ?? '';
 if (filePath) {
-  const rel = isAbsolute(filePath) ? relative(cwd, filePath) : filePath;
-  if (rel.startsWith('..')) process.exit(0); // Outside the repo.
-  if (/(^|\/)\.ezmodo\//.test(rel)) process.exit(0);
+  const rel = repoRelativePath(filePath, cwd);
+  if (rel === null) process.exit(0); // Outside the repo.
+  if (isConfigDirPath(rel)) process.exit(0);
 }
 
 if (readActiveSession(configDir)) process.exit(0); // Tracked. Nothing to say.

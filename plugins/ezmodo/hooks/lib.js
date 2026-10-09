@@ -10,7 +10,7 @@
 
 import { existsSync, readFileSync } from 'fs';
 import { homedir } from 'os';
-import { dirname, join, resolve } from 'path';
+import path, { dirname, join } from 'path';
 
 // The repo's EzModo config dir. The pre-rebrand config dir is no longer read
 // (#2843) — same as mcp-server/lib/repo-config-dir.js.
@@ -70,8 +70,12 @@ export function emit(text) {
 /**
  * Split a shell command line into its top-level simple commands.
  *
- * Splits on UNQUOTED `&&`, `||`, `;`, `|` and newlines, and drops heredoc
- * bodies first. Both matter for the one input this reads most: a commit command,
+ * Splits on UNQUOTED `&&`, `||`, `;`, `|`, a lone `&` and newlines, and drops
+ * heredoc bodies first. A lone `&` ends a command in every shell the hook can
+ * see it from: it backgrounds one in bash, and it is cmd.exe's sequencing
+ * operator and PowerShell's call operator (`& git commit`), so splitting there
+ * leaves the git word at the start of its own segment. `2>&1` and `&>` are
+ * redirections, not separators. Both matter for the one input this reads most: a commit command,
  * whose message routinely contains `&&`, `;` and newlines, and sometimes the
  * words "cd" and "git commit" themselves. Not a shell parser — it only has to
  * be right about where one command ends and the next begins.
@@ -113,6 +117,11 @@ export function splitCommands(command) {
       i++;
       continue;
     }
+    if (c === '&' && text[i - 1] !== '>' && text[i - 1] !== '<' && text[i + 1] !== '>') {
+      segments.push(current);
+      current = '';
+      continue;
+    }
     if (c === ';' || c === '|' || c === '\n') {
       segments.push(current);
       current = '';
@@ -134,13 +143,57 @@ function tokens(segment) {
   return out;
 }
 
-/** `~` and `$HOME` are knowable; any other variable is not. */
-function expandPath(raw) {
-  let path = raw;
-  if (path === '~' || path.startsWith('~/')) path = homedir() + path.slice(1);
-  path = path.replace(/^\$\{?HOME\}?(?=\/|$)/, homedir());
-  if (path.includes('$')) return null;
-  return path;
+/** True when `p` is the Windows flavour of node's path module. */
+function isWin32(p) {
+  return p.sep === '\\';
+}
+
+/**
+ * The ways a command line can name the home directory: `~`, `$HOME` and
+ * `${HOME}` in every shell; `$env:USERPROFILE` / `$env:HOME`
+ * (PowerShell) and `%USERPROFILE%` (cmd.exe) too, since a Windows session can
+ * run its commands through either.
+ */
+const HOME_PREFIX =
+  /^(?:~|\$\{HOME\}|\$HOME|\$env:(?:USERPROFILE|HOME)|%USERPROFILE%)(?=[\\/]|$)/i;
+
+/**
+ * A command-line path made absolute-ready for `p`, or null when it cannot be
+ * known statically. Home forms are expanded; any other variable is not.
+ *
+ * On Windows, a Git Bash path such as `/c/work/infra` is rewritten to
+ * `C:\work\infra`. Claude Code runs Bash-tool commands through Git Bash
+ * there, while the payload's cwd is a native `C:\…` path; resolving one
+ * against the other without this would invent `C:\c\work\infra`.
+ */
+function expandPath(raw, { path: p, home }) {
+  let out = raw.replace(HOME_PREFIX, () => home);
+  if (/[$`]/.test(out)) return null;
+  if (isWin32(p)) {
+    if (/%[^%]+%/.test(out)) return null;
+    out = out.replace(/^\/([A-Za-z])(?=\/|$)/, (_, drive) => `${drive.toUpperCase()}:`);
+    if (/^[A-Za-z]:$/.test(out)) out += '\\';
+  }
+  return out;
+}
+
+/** Commands that change directory, in bash, cmd.exe and PowerShell (any case). */
+const CD_COMMANDS = new Set(['cd', 'pushd', 'chdir', 'set-location', 'sl', 'push-location']);
+
+/** `git`, `git.exe`, or a path ending in either (`& "C:\…\git.exe" commit`). */
+const GIT_WORD = /(^|[\\/])git(\.exe)?$/i;
+
+/**
+ * The target of a directory change, skipping the switches each shell allows
+ * before it: cmd.exe's `cd /d D:\x` (drive switch, Windows only — on POSIX
+ * `/d` is a directory) and PowerShell's `-Path` / `-LiteralPath`. Undefined
+ * means "no argument", which is home in bash.
+ */
+function cdTarget(args, p) {
+  let i = 0;
+  if (isWin32(p) && /^\/d$/i.test(args[i] ?? '')) i++;
+  if (/^-(?:Path|LiteralPath)$/i.test(args[i] ?? '')) i++;
+  return args[i];
 }
 
 /**
@@ -158,9 +211,16 @@ function expandPath(raw) {
  * without running a shell: command substitution, variables other than HOME,
  * `cd -`, `--git-dir`/`--work-tree`. When several commits appear, the last one
  * wins, since its HEAD is the one left standing.
+ *
+ * Windows (#3128): the command may come from Git Bash (`cd /c/work`), cmd.exe
+ * (`cd /d D:\work`) or PowerShell (`Set-Location -Path C:\work; & git commit`).
+ * All three are read, and paths resolve with the platform's path module.
+ * `path` and `home` are injectable so tests can exercise the Windows rules on
+ * any OS with `path.win32`.
  */
-export function resolveCommitDir(command, cwd) {
+export function resolveCommitDir(command, cwd, { path: p = path, home = homedir() } = {}) {
   if (/`|\$\(/.test(String(command))) return null;
+  const env = { path: p, home };
 
   let dir = cwd;
   let commitDir = null;
@@ -168,25 +228,25 @@ export function resolveCommitDir(command, cwd) {
     const words = tokens(segment);
     if (words.length === 0) continue;
 
-    if (words[0] === 'cd' || words[0] === 'pushd') {
-      const target = words[1] ?? '~';
+    if (CD_COMMANDS.has(words[0].toLowerCase())) {
+      const target = cdTarget(words.slice(1), p) ?? '~';
       if (target === '-') return null;
-      const expanded = expandPath(target);
+      const expanded = expandPath(target, env);
       if (expanded === null) return null;
-      dir = resolve(dir, expanded);
+      dir = p.resolve(dir, expanded);
       continue;
     }
 
-    const gitAt = words.indexOf('git');
+    const gitAt = words.findIndex((w) => GIT_WORD.test(w));
     if (gitAt === -1) continue;
     let at = dir;
     let isCommit = false;
     for (let i = gitAt + 1; i < words.length; i++) {
       const word = words[i];
       if (word === '-C') {
-        const expanded = expandPath(words[++i] ?? '');
+        const expanded = expandPath(words[++i] ?? '', env);
         if (!expanded) return null;
-        at = resolve(at, expanded);
+        at = p.resolve(at, expanded);
         continue;
       }
       if (word === '-c') {
@@ -201,4 +261,26 @@ export function resolveCommitDir(command, cwd) {
     if (isCommit) commitDir = at;
   }
   return commitDir;
+}
+
+/**
+ * `filePath` relative to the repo at `cwd`, always with forward slashes, or null
+ * when it lies outside it.
+ *
+ * Forward slashes because the callers match against `.ezmodo/`: on Windows
+ * `path.relative` answers with backslashes, and a `/`-only pattern then never
+ * matched there (#3128). Outside covers `..` and, on Windows, a different
+ * drive, where `relative` returns an absolute path rather than one with `..`.
+ */
+export function repoRelativePath(filePath, cwd, p = path) {
+  const rel = p.relative(cwd, p.resolve(cwd, filePath));
+  if (p.isAbsolute(rel)) return null;
+  const posix = rel.split(p.sep).join('/');
+  if (posix === '..' || posix.startsWith('../')) return null;
+  return posix;
+}
+
+/** True for a repo-relative path inside EzModo's own config dir. */
+export function isConfigDirPath(rel) {
+  return rel === CONFIG_DIR || rel.startsWith(`${CONFIG_DIR}/`) || rel.includes(`/${CONFIG_DIR}/`);
 }
