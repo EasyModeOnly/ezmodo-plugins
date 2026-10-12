@@ -18,7 +18,7 @@
  */
 
 import { execFileSync } from 'child_process';
-import { findConfigDir, readActiveSession, readPayload, emit, resolveCommitDir } from './lib.js';
+import { findConfigDir, activeSessionFor, readPayload, emit, resolveCommitDir } from './lib.js';
 
 const payload = readPayload();
 if (!payload) process.exit(0);
@@ -43,22 +43,34 @@ if (!configDir) process.exit(0); // Not an EzModo repo — say nothing.
 let sha = null;
 let subject = null;
 let branch = null;
+let worktree = null;
+let gitDir = null;
 try {
   const git = (args) =>
     execFileSync('git', args, { cwd, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   sha = git(['rev-parse', 'HEAD']);
   subject = git(['log', '-1', '--pretty=%s']);
   branch = git(['rev-parse', '--abbrev-ref', 'HEAD']);
+  [worktree, gitDir] = git(['rev-parse', '--show-toplevel', '--absolute-git-dir']).split('\n');
 } catch {
   process.exit(0); // No git, no HEAD, detached oddity — not worth a message.
 }
 
 if (!sha || sha.length !== 40) process.exit(0);
 
-const session = readActiveSession(configDir);
+// The session for THIS worktree (#3195), not whichever one claimed last.
+const { session, foreign } = activeSessionFor(configDir, { gitDir, worktree, branch });
 const target = session
   ? `taskId "${session.taskId}" (#${session.taskNumber} — ${session.title})`
   : 'the active task — if there is none, this commit is untracked work; call report_untracked_work';
+const foreignNote = foreign
+  ? [
+      '',
+      `Not #${foreign.taskNumber} (${foreign.title}): EzModo's active session names it for ` +
+        `${foreign.branch ? `branch ${foreign.branch}` : 'another checkout'}, not this worktree. ` +
+        'Link the task this commit actually serves.',
+    ]
+  : [];
 
 emit(
   [
@@ -69,6 +81,7 @@ emit(
     `  message: ${subject}`,
     '',
     `Call manage_task action:"link_commit" against ${target}.`,
+    ...foreignNote,
     'Use the full 40-character sha above — a shortened one is rejected.',
     'Then summarise any manifest.needsSummary paths it returns with update_manifest_entries.',
   ].join('\n')

@@ -34,15 +34,63 @@ export function findConfigDir(startDir) {
  * on an in_progress transition and clears it on completion. Reading it rather
  * than tracking state of our own is what keeps the hook honest — it reflects
  * what EzModo actually believes, not what a hook guessed.
+ *
+ * This reads only the legacy per-repo file, with no regard to which worktree
+ * wrote it — right for "is ANY task active?", wrong for "which task is THIS
+ * commit's?". For the latter use activeSessionFor.
  */
 export function readActiveSession(configDir) {
+  return readSessionFile(join(configDir, SESSION_FILENAME));
+}
+
+// The legacy per-repo session file in `.ezmodo/`, and the per-worktree one in
+// the worktree's git dir (#3195). Same names as mcp-server/lib/active-session.js.
+const SESSION_FILENAME = 'active-session.json';
+const WORKTREE_SESSION_FILENAME = 'ezmodo-active-session.json';
+
+function readSessionFile(file) {
   try {
-    const raw = readFileSync(join(configDir, 'active-session.json'), 'utf-8');
-    const s = JSON.parse(raw);
+    const s = JSON.parse(readFileSync(file, 'utf-8'));
     return s && s.taskId ? s : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * The active session for a commit made in one particular checkout (#3195).
+ *
+ * `.ezmodo/` is usually untracked, so a worktree under the repo has no config
+ * of its own and `findConfigDir` lands on the MAIN checkout's — whose
+ * `active-session.json` is shared by every worktree and names whichever task
+ * was claimed last. So, in order:
+ *
+ * 1. `<gitDir>/ezmodo-active-session.json`: written for this worktree and no
+ *    other, trusted as is.
+ * 2. The legacy `.ezmodo/active-session.json`, trusted only when it does not
+ *    name another checkout: its `worktree` must match, or, from a server that
+ *    recorded only a `branch`, the branch must. A file with neither predates
+ *    both fields and is trusted, as it always was.
+ *
+ * Returns `{ session, foreign }`: `session` is the task to suggest, or null;
+ * `foreign` is a legacy session rejected for naming another checkout, so the
+ * caller can say so rather than present it as this commit's task.
+ */
+export function activeSessionFor(configDir, { gitDir, worktree, branch } = {}, p = path) {
+  if (gitDir) {
+    const own = readSessionFile(join(gitDir, WORKTREE_SESSION_FILENAME));
+    if (own) return { session: own, foreign: null };
+  }
+  const legacy = readSessionFile(join(configDir, SESSION_FILENAME));
+  if (!legacy) return { session: null, foreign: null };
+
+  let elsewhere = false;
+  if (legacy.worktree && worktree) {
+    elsewhere = p.resolve(legacy.worktree) !== p.resolve(worktree);
+  } else if (legacy.branch && branch) {
+    elsewhere = legacy.branch !== branch;
+  }
+  return elsewhere ? { session: null, foreign: legacy } : { session: legacy, foreign: null };
 }
 
 /** Read the hook payload from stdin. Returns null on anything unparseable. */

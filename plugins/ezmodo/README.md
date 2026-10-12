@@ -58,7 +58,7 @@ silently. Everything here is what ships.
 ```
 plugins/ezmodo/
 ├── .claude-plugin/plugin.json   # the plugin manifest
-├── commands/                    # /ezmodo:start | resume | untracked | submit
+├── commands/                    # /ezmodo:start | resume | untracked | submit | catch-up
 ├── skills/                      # work-tracking, link-upkeep, db-schema-snapshot
 ├── hooks/                       # commit linking, untracked-edit drift
 └── .mcp.json                    # the EzModo MCP server
@@ -95,6 +95,7 @@ machine it was written on.
 | `/ezmodo:resume <number\|id>` | load by id — never search — read every knowledge item, report what changed, continue from the first incomplete step |
 | `/ezmodo:untracked [what]` | `report_untracked_work` with the branch and `git status` prefilled, and the right `origin` |
 | `/ezmodo:submit [note]` | steps, knowledge, `link_commit`, clear link suggestions, then `in_review` |
+| `/ezmodo:catch-up [since]` | `catch_up` for the project (default 7 days), then a short summary for you: completed, blocked, new work, decisions |
 
 They are deliberately thin — the reasoning lives in the skills, so a rule is
 written once rather than in a command and a skill that slowly disagree. Each

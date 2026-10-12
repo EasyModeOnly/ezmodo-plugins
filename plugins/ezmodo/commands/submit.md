@@ -26,11 +26,12 @@ Work through, in order:
    Upkeep** skill.
 5. **Test cases** — only if `autoGenerateTestCases` is true in the project
    context. 3-6 cases covering happy path, edges and errors.
-6. **How it works** — write it yourself with `manage_task
-   action:"apply_how_it_works"`: `markdown` saying what the change does now, and
-   `sources` whose claims cite `task:<taskId>`, `commit:<full sha>` or
-   `file:<path>` refs. Check the response for claims it marked `unverified` and
-   fix them. Last task of an epic, or the work changed what a feature does? Do
+6. **How it works** — write it yourself. Call `manage_task
+   action:"how_it_works_context"` first: it returns the task's `intent` and
+   `sources[]`, the only refs the server accepts. Then `manage_task
+   action:"apply_how_it_works"` with `markdown` saying what the change does now,
+   and `sources` whose claims cite refs copied from `sources[].ref`. Check the
+   response for claims it marked `unverified` and fix them. Last task of an epic, or the work changed what a feature does? Do
    the same for the epic or feature. Never `generate_how_it_works` — that bills
    the user for what you can write. See the **EzModo Work Tracking** skill.
 7. **Submit** — `manage_task action:"update"` with `status:"in_review"` and
