@@ -12,17 +12,16 @@
  * is how a hook gets disabled.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
 import {
   findConfigDir,
-  readActiveSession,
+  readWorktreeSession,
   readPayload,
   emit,
   repoRelativePath,
   isConfigDirPath,
 } from './lib.js';
+import { safeGit } from './safe-git.js';
+import { claimMarker } from './session-marker.js';
 
 const payload = readPayload();
 if (!payload) process.exit(0);
@@ -39,22 +38,24 @@ if (filePath) {
   if (isConfigDirPath(rel)) process.exit(0);
 }
 
-if (readActiveSession(configDir)) process.exit(0); // Tracked. Nothing to say.
-
-// Once per session. The marker lives in the OS temp dir, not the repo: it is
-// per-session scratch, and writing it into a checkout would be a stray file in
-// someone's diff.
-const sessionId = String(payload.session_id ?? 'unknown').replace(/[^A-Za-z0-9_-]/g, '');
-const markerDir = join(tmpdir(), 'ezmodo-plugin-hooks');
-const marker = join(markerDir, `untracked-${sessionId}`);
-if (existsSync(marker)) process.exit(0);
+// Tracked? Only the per-worktree session in the git dir answers that (E-297
+// #3348): the legacy .ezmodo/active-session.json can be committed, so a
+// cloned repo could ship one that silences this reminder for good.
+let gitDir = null;
 try {
-  mkdirSync(markerDir, { recursive: true });
-  writeFileSync(marker, new Date().toISOString());
+  gitDir = safeGit(['rev-parse', '--absolute-git-dir'], cwd);
 } catch {
-  // If the marker cannot be written the reminder may repeat. Annoying, not
-  // broken — better than staying silent about untracked work.
+  // Not a git checkout, or git is unavailable: no session can be recorded.
 }
+if (readWorktreeSession(gitDir)) process.exit(0); // Tracked. Nothing to say.
+
+// Once per session. The marker lives in a private per-user directory, not the
+// repo: it is per-session scratch, and writing it into a checkout would be a
+// stray file in someone's diff. If it cannot be claimed safely the reminder
+// may repeat. Annoying, not broken — better than staying silent about
+// untracked work, and better than writing through someone else's symlink.
+const sessionId = String(payload.session_id ?? 'unknown').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 128);
+if (claimMarker(`untracked-${sessionId}`) === 'exists') process.exit(0);
 
 emit(
   [

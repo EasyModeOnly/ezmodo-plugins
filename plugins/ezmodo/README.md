@@ -168,9 +168,23 @@ a bare `node` that reads the hook payload as a script. The tests pin
 the plugin CI (`plugin-smoke.yml`) also runs them, and the hook commands
 through bash, cmd.exe and PowerShell, on Windows, macOS and Linux.
 
-**The edit hook reads `.ezmodo/active-session.json`**, which the MCP server
-already writes on an `in_progress` transition and clears on completion. Reading
-what EzModo actually believes beats a hook keeping state of its own.
+**Both hooks trust only `<git-dir>/ezmodo-active-session.json`**, which the MCP
+server writes on an `in_progress` transition and clears on completion. Reading
+what EzModo actually believes beats a hook keeping state of its own. The legacy
+`.ezmodo/active-session.json` sits in the working tree, where some repos commit
+it, so a cloned repo can carry a planted one (E-297 #3348): it no longer
+silences the edit hook, and the commit hook shows it only as an unverified
+pointer, never as the taskId to link.
+
+**The hooks treat the repo as untrusted** (E-297 #3348). The commit hook runs
+git in whatever directory the command committed in, and a repo's own
+`.git/config` can make a plain `git log` run a program (`log.showSignature` +
+`gpg.program`). Every git call goes through `safe-git.js`, which overrides
+those settings with `-c` on the command line. Session titles, commit subjects
+and branch names are flattened to one line, capped and quoted before the model
+sees them. The reminder fires only when the tool output shows the commit
+landed (git's `[branch sha]` line naming HEAD, or a HEAD committed moments
+ago), so `git commit …; echo done` after a failed commit says nothing.
 
 ### They must degrade quietly
 
@@ -182,14 +196,22 @@ every path exits 0, and every one of these is silent:
 - unparseable or absent hook payload
 - a `Bash` call that is not a commit; a commit with no resolvable `HEAD`
 - a commit whose directory cannot be known without running a shell —
-  `cd "$(…)"`, `cd $SOME_VAR`, `cd -`, `--git-dir` — rather than guess
+  `cd "$(…)"`, `cd $SOME_VAR`, `cd -`, `popd`, `eval`/`source`, `GIT_DIR=…`,
+  `--git-dir` — rather than guess. Comments are not commands, and only a
+  segment whose command word is git can be a commit (`echo git -C /x commit`
+  is not one)
+- a commit the tool output does not show landing
 - an edit to `.ezmodo/` itself, or to a path outside the repo
 - an edit while a task **is** active
 - the second and every later untracked edit in one session
 
-The once-per-session marker lives in the OS temp directory keyed by session id,
-never in the checkout — a hook that leaves a stray file in someone's diff has
-already failed.
+The once-per-session marker lives in a private per-user directory
+(`$XDG_RUNTIME_DIR/ezmodo-plugin-hooks`, else `~/.cache/ezmodo/plugin-hooks`),
+keyed by session id, never in the checkout — a hook that leaves a stray file in
+someone's diff has already failed. The directory must be a real directory owned
+by the user (mode 0700), and the marker is created exclusively without
+following symlinks (`session-marker.js`); it used to sit in the shared temp dir,
+where another user could plant a symlink at its predictable name.
 
 ## The MCP server
 
