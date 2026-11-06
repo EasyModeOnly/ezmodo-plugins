@@ -220,18 +220,25 @@ them, and set `origin`:
 ## Context recovery — resuming a task
 
 1. `get_task` with the `taskId` for full state.
-2. Skip the steps already completed.
-3. Read **all** the knowledge items — that is where the previous session's
+2. **Review feedback comes first.** If a reviewer sent the task back, it is
+   `in_progress` again and its knowledge holds their feedback: a `context`
+   item tagged `review-feedback` (or a `reviewFeedback` field on the task).
+   Read the newest one before anything else, tell your person what it asks,
+   and address every point. It overrides the plan the last session was
+   following. When you resubmit, say in `completionNotes` how each point was
+   handled.
+3. Skip the steps already completed.
+4. Read **all** the knowledge items — that is where the previous session's
    reasoning went.
-4. Look for `progress-checkpoint` knowledge for the latest status.
-5. **If the task belongs to an epic other people also work on**, call
+5. Look for `progress-checkpoint` knowledge for the latest status.
+6. **If the task belongs to an epic other people also work on**, call
    `get_epic_activity epicId:…` first. It says, in plain sentences, what
    changed since your person last looked: decisions waiting on their view,
    comments that mention or answer them, decisions made, new plan versions and
    task progress. Tell your person what matters in it before carrying on, and
    read the plan again before changing it. It marks the epic as caught up, so
    the next call only shows newer changes.
-6. Continue from there.
+7. Continue from there.
 
 ## Commit linking
 
@@ -271,8 +278,18 @@ Pass `updateManifest: false` to link a commit without touching the manifest.
 
 ## Completion
 
-1. Check `autoGenerateTestCases` from the project context. If `false`, skip to 3.
-2. Write the test cases yourself — you have the context of the change you just
+1. **Say how a person verifies it, as test cases.** Tasks in review land in a
+   review queue where a human checks each one against its linked test cases
+   and records Pass or Fail before approving. Create one to three manual
+   cases with `manage_test_case action:"create"`: `projectId`, `originTaskId`
+   (this task), a `title` naming what is checked, and `steps`
+   (`{instruction, expectedResult}`) a person can follow without reading the
+   code (where to click or what to run, and what they should see). Skip it
+   only when there is nothing a person can observe (a pure refactor), and say
+   so in `completionNotes`. If the task already has linked cases that still
+   describe the work, update them instead of adding duplicates.
+2. Check `autoGenerateTestCases` from the project context. If `true`, also
+   write the broader suite yourself — you have the context of the change you just
    made. `manage_test_case action:"create"` per case with `projectId`,
    `originTaskId`, `title`, `description`, `category`, `priority`, `steps`
    (`{instruction, expectedResult}`) and any `preconditions`. Aim for 3-6 cases

@@ -14,14 +14,20 @@ task number.
 
 Then, before doing anything:
 
+0. **Review feedback first.** If the task was sent back from review it is
+   `in_progress` again, with the reviewer's feedback as a `context` knowledge
+   item tagged `review-feedback` (or a `reviewFeedback` field). Read the
+   newest one first and treat every point as required work: it overrides the
+   plan the last session was following. When you resubmit, say in
+   `completionNotes` how each point was handled.
 1. Read **every** knowledge item. That is where the previous session put its
    reasoning — root causes, decisions and what they rejected, blockers.
 2. Look for knowledge tagged `progress-checkpoint` for the latest status.
 3. Note which steps are already complete. Do not redo them.
 
-Report back: what the task is, what has been done, what the last session
-learned that changes how you would approach the rest, and which step you are
-picking up. Then continue from there, following the **EzModo Work Tracking**
+Report back: what the task is, any review feedback and what it asks for,
+what has been done, what the last session learned that changes how you would
+approach the rest, and which step you are picking up. Then continue from there, following the **EzModo Work Tracking**
 skill for the rest.
 
 If the task is already `in_review` or `completed`, say so and ask before

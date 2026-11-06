@@ -24,8 +24,14 @@ Work through, in order:
    task and clear the queue with `resolve_link_suggestions`. Reject with a real
    reason; leaving them pending is the only wrong outcome. See the **EzModo Link
    Upkeep** skill.
-5. **Test cases** — only if `autoGenerateTestCases` is true in the project
-   context. 3-6 cases covering happy path, edges and errors.
+5. **How to verify, as test cases.** The reviewer checks your work against the
+   task's linked test cases and records Pass/Fail before approving. Create 1-3
+   manual cases (`manage_test_case action:"create"`, `originTaskId` = this
+   task) whose `steps` tell a person exactly what to do and what they should
+   see, without reading the code. Update existing linked cases rather than
+   duplicating them. Skip only when nothing is observable (a pure refactor),
+   and say so in the notes. If `autoGenerateTestCases` is true in the project
+   context, also write the 3-6 case suite (happy path, edges, errors).
 6. **How it works** — write it yourself. Call `manage_task
    action:"how_it_works_context"` first: it returns the task's `intent` and
    `sources[]`, the only refs the server accepts. Then `manage_task
@@ -35,7 +41,9 @@ Work through, in order:
    the same for the epic or feature. Never `generate_how_it_works` — that bills
    the user for what you can write. See the **EzModo Work Tracking** skill.
 7. **Submit** — `manage_task action:"update"` with `status:"in_review"` and
-   `completionNotes`.
+   `completionNotes`. The notes are stored with the submission and shown on
+   the reviewer's row. If this is a resubmission after review feedback, say
+   how each point of the feedback was handled.
 
 The notes are the deliverable. They must say what was done, what was verified
 and how, and — explicitly — anything in scope that was **not** done and why.
