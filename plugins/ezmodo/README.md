@@ -59,7 +59,7 @@ silently. Everything here is what ships.
 plugins/ezmodo/
 ├── .claude-plugin/plugin.json   # the plugin manifest
 ├── commands/                    # /ezmodo:start | resume | untracked | submit | catch-up
-├── skills/                      # work-tracking, link-upkeep, db-schema-snapshot
+├── skills/                      # work-tracking, link-upkeep, db-schema-snapshot, help-page-screenshots
 ├── hooks/                       # commit linking, untracked-edit drift
 └── .mcp.json                    # the EzModo MCP server
 ```
@@ -107,15 +107,16 @@ has to guess at a SHA or a file list.
 
 ## Skills
 
-Three, extracted from this repo's `CLAUDE.md` because every repo that uses EzModo
-needs the same rules and copying 300 lines of prose into each one guarantees they
-drift:
+Four. The first three were extracted from this repo's `CLAUDE.md` because every
+repo that uses EzModo needs the same rules and copying 300 lines of prose into
+each one guarantees they drift:
 
 | Skill | Fires when | Covers |
 |---|---|---|
 | `work-tracking` | starting, resuming or finishing work in a repo with `.ezmodo/config.json` | session init, create-before-you-edit, step toggling, knowledge capture, `report_untracked_work`, context recovery, `link_commit`, completion → `in_review` |
 | `link-upkeep` | work touches files a feature owns, or a response returns `linkSuggestions` | `resolve_links`, resolving suggestions with reasons, feature code paths, link provenance, derived-beats-asserted, derived navigation on the screens catalog, the feature axis |
 | `db-schema-snapshot` | a migration is added or changed | finding the `kind:"db_schema"` catalog, patch vs replace, why replace is expensive, snapshotting every namespace |
+| `help-page-screenshots` | writing a help page or how-to, or adding images to a document | one screenshot per step, cropping with Claude in Chrome's `zoom`, keeping customer data and secrets out, alt text, `manage_document add_image` placement, submit for review |
 
 They resolve project identity at runtime through
 `get_current_project_context()` — no org or project id is baked in, so they work
@@ -123,7 +124,7 @@ in any tracked repo. Anything that could only be true of the EzModo monorepo
 itself (its introspection command, its Go link-retraction helpers) stayed in that
 repo's `CLAUDE.md`.
 
-Always-on cost is ~370 tokens for all three; each loads its full body only when
+Always-on cost is ~370 tokens for the first three, plus about 100 for `help-page-screenshots`; each loads its full body only when
 it fires. `claude plugin details ezmodo@ezmodo` prints the current breakdown.
 
 ## Hooks
