@@ -202,6 +202,11 @@ a bug in the parser" helps nobody; "the parser dropped trailing commas because
 it: `{type:"context", tags:["progress-checkpoint"]}` naming which steps are done,
 what you are mid-way through, and which files you have changed.
 
+**Building UI?** Call `get_design_system` first, with `path` = the file you are
+about to write (`path:"web/src/components/marketing/pricing-hero.tsx"`). A
+project can have several themes, each owning code paths; the path picks the one
+for that surface, and `themeReason` says why it was chosen.
+
 ## Work that started without a task
 
 Sometimes a "just fix this quickly" request slips through and you are three edits
