@@ -58,8 +58,8 @@ silently. Everything here is what ships.
 ```
 plugins/ezmodo/
 ├── .claude-plugin/plugin.json   # the plugin manifest
-├── commands/                    # /ezmodo:start | resume | untracked | submit | catch-up
-├── skills/                      # work-tracking, link-upkeep, db-schema-snapshot, help-page-screenshots
+├── commands/                    # /ezmodo:start | resume | untracked | submit | catch-up | release
+├── skills/                      # work-tracking, link-upkeep, db-schema-snapshot, help-page-screenshots, release
 ├── hooks/                       # commit linking, untracked-edit drift
 └── .mcp.json                    # the EzModo MCP server
 ```
@@ -96,6 +96,7 @@ machine it was written on.
 | `/ezmodo:untracked [what]` | `report_untracked_work` with the branch and `git status` prefilled, and the right `origin` |
 | `/ezmodo:submit [note]` | steps, knowledge, `link_commit`, clear link suggestions, then `in_review` |
 | `/ezmodo:catch-up [since]` | `catch_up` for the project (default 7 days), then a short summary for you: completed, blocked, new work, decisions |
+| `/ezmodo:release [version\|run id\|detect]` | bump each deliverable per its versioning settings (files, tags or EzModo-assigned), one commit per deliverable on `release/<key>-v<version>`, open the PR; or a release run's manual bumps; or detect versioning and save it after you confirm |
 
 They are deliberately thin — the reasoning lives in the skills, so a rule is
 written once rather than in a command and a skill that slowly disagree. Each
@@ -107,7 +108,7 @@ has to guess at a SHA or a file list.
 
 ## Skills
 
-Four. The first three were extracted from this repo's `CLAUDE.md` because every
+Five. The first three were extracted from this repo's `CLAUDE.md` because every
 repo that uses EzModo needs the same rules and copying 300 lines of prose into
 each one guarantees they drift:
 
@@ -116,6 +117,7 @@ each one guarantees they drift:
 | `work-tracking` | starting, resuming or finishing work in a repo with `.ezmodo/config.json` | session init, create-before-you-edit, step toggling, knowledge capture, `report_untracked_work`, context recovery, `link_commit`, completion → `in_review` |
 | `link-upkeep` | work touches files a feature owns, or a response returns `linkSuggestions` | `resolve_links`, resolving suggestions with reasons, feature code paths, link provenance, derived-beats-asserted, derived navigation on the screens catalog, the feature axis |
 | `db-schema-snapshot` | a migration is added or changed | finding the `kind:"db_schema"` catalog, patch vs replace, why replace is expensive, snapshotting every namespace |
+| `release` | bumping versions for a release, a Release-wizard hand-off, or "how is this repo versioned?" | reading `versioning` per deliverable, picking and checking the version, per-format file edits, bump groups, tags, the bump PR and branch name a release run matches, manual bumps of a run, detecting versioning (E-331 #3809) |
 | `help-page-screenshots` | writing a help page or how-to, or adding images to a document | one screenshot per step, cropping with Claude in Chrome's `zoom`, keeping customer data and secrets out, alt text, `manage_document add_image` placement, submit for review |
 
 They resolve project identity at runtime through
