@@ -40,10 +40,24 @@ Work through, in order:
    response for claims it marked `unverified` and fix them. Last task of an epic, or the work changed what a feature does? Do
    the same for the epic or feature. Never `generate_how_it_works` — that bills
    the user for what you can write. See the **EzModo Work Tracking** skill.
-7. **Submit** — `manage_task action:"update"` with `status:"in_review"` and
+7. **Anything left for a person? Ask it on the task.** Each thing only a
+   person can do or decide becomes a question, not a line in your last
+   message: `manage_decision action:"create"` with `taskId`, `question`,
+   `choices` and a `recommendation` when there are options;
+   `manage_question action:"create"` with `kind` `todo` (and a deep `link` to
+   the exact place), `question` or `approval` otherwise. `blocking:true` if
+   the task can't go on without it. If you are asking only because the API
+   can't do something, file that gap as a task too and name it in the
+   question. See the **EzModo Work Tracking** skill, "Things only a person
+   can do".
+8. **Submit** — `manage_task action:"update"` with `status:"in_review"` and
    `completionNotes`. The notes are stored with the submission and shown on
    the reviewer's row. If this is a resubmission after review feedback, say
    how each point of the feedback was handled.
+9. **Report** — your final message names the questions you asked (kind and
+   title, one per line) and links the person's Inbox
+   (`https://ezmodo.com/<orgSlug>/inbox`), plus any API-gap task you filed.
+   Never end with a "Still on you:" or "You'll need to…" list.
 
 The notes are the deliverable. They must say what was done, what was verified
 and how, and — explicitly — anything in scope that was **not** done and why.

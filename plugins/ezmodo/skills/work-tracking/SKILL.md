@@ -47,6 +47,12 @@ MCP server. The contract, in short:
     `action:"complete"`. A human completes a task after verifying it.
 11. **Report what actually happened.** A task moved to `in_review` claiming work
     that was not done is worse than no task, because the next session trusts it.
+    Anything left for a person is a **question on the task**, not a "still on
+    you" list at the end: `manage_decision` with `taskId` when there are
+    options, `manage_question` for a to do, a question or an approval. The
+    final report names the questions and links to the person's Inbox.
+    Answers come back as `answeredWhileAway` at session start and on
+    `get_task`: act on them before anything else.
 
 Respect the project's `terminology`: a project can rename epics and tasks, and a
 marketing project calls an epic a "Campaign". Write anything a
@@ -76,9 +82,11 @@ The sections below are the same contract in full.
    repo is not tracked — say so rather than guessing at a project.
 2. Call `get_current_project_context()` and cache the `projectId` for the
    session. It also returns the tags and `terminology` you will need.
-3. If the user named an existing task or epic, load it directly with `get_task` /
+3. If the response leads with `answeredWhileAway`, act on those answers first
+   (see **Things only a person can do**).
+4. If the user named an existing task or epic, load it directly with `get_task` /
    `get_epic` and resume via **Context recovery** below.
-4. Otherwise create a task before you edit anything.
+5. Otherwise create a task before you edit anything.
 
 **Respect the project's `terminology`.** A project can rename epics and tasks,
 and their statuses — a marketing project calls an epic a "Campaign". Write anything a human reads in those words. Keep
@@ -172,6 +180,73 @@ with a `warnings` sentence. Pass it on to your person rather than dropping it.
 your person is none of those, `update_epic_plan` is refused: suggest the change
 with `add_epic_comment`, or ask it as a decision to make, instead.
 
+## Things only a person can do: ask on the task
+
+Don't end a session with a "Still on you:" list, or "you'll need to…" in the
+last message. That list lives in one terminal's scrollback: nothing queues it,
+links it to the work it holds up, or notices when it's done, and the answer has
+to be typed back into whichever terminal is waiting. Instead, **ask each item
+as a question on the task it holds up**. It lands in the person's **Inbox**
+(`https://ezmodo.com/<orgSlug>/inbox`), next to their review queue, and the
+answer is saved on the task.
+
+Pick the kind by what you need:
+
+| You need | Ask with |
+|---|---|
+| A choice between options ("which of these?", "your call") | `manage_decision action:"create"` with `taskId`, `question`, `choices` and a `recommendation`. On a task the person answers it, and the answer is the decision record |
+| A step only a person can do (a console screen, a secret, a UI-only setting) | `manage_question action:"create" kind:"todo"`: say exactly what, and put a deep link to the exact place in `link` |
+| A free-text answer | `manage_question kind:"question"` |
+| An approval that happens somewhere else (a PR, a store console) | `manage_question kind:"approval"` with `link` to where. Nobody approves from the card |
+
+```
+manage_question action:"create" taskId:… kind:"todo" blocking:true
+  title:"Remove the empty assignee from #357–359"
+  body:"The API can't change assignees on existing tasks, so this one is in the UI. …"
+  link:"https://ezmodo.com/emo/projects/ezmodo/tasks/357"
+```
+
+- **Ask on the task the answer unblocks.** Use `epicId` only when no single
+  task is held up.
+- **Write the title as the question itself**, in plain words a non-developer
+  can answer. Put what, why, and what each option costs in `body`.
+- **`blocking:true`** when the task can't go on without it: the task shows
+  Blocked until it is answered, then it is released. Leave it false for
+  anything that can wait.
+- **The person answering defaults to the one you work for.** Pass `ownerId`
+  (or `requestedFrom` on a decision) only to ask someone else.
+- **Asking because the API can't do something?** Then the API has a gap. File
+  it as a task too (`manage_task action:"create"`, same project, saying what
+  the call would have needed), and mention its number in the question's body,
+  so the next session can do it without asking.
+- **Answers come to you.** `get_current_project_context` at session start and
+  `get_task` both lead with **`answeredWhileAway`**: the questions answered,
+  done, marked not needed or reopened since you last looked, plus decided task
+  decisions. Each is shown once, so **act on it before anything else**.
+  `reopened:true` means the person took back their earlier answer: stop relying
+  on it. A decision's outcome is in `answer.text` and `status`, and "Not
+  needed" shows as `rejected`.
+- **Checking while the session runs:** `list_questions taskId:…
+  answeredSince:<when you asked>` returns what changed since; `list_questions
+  unseen:true` gives the same list as `answeredWhileAway` across the
+  organization.
+- **No longer needed?** `manage_question action:"withdraw"`, so it leaves the
+  Inbox instead of waiting for someone.
+
+**The final report names the questions, not a list.** Say how many you asked,
+link the Inbox, and give each one's kind and title on a line. Mention any API
+gap task you filed:
+
+```
+Asked you 2 questions · https://ezmodo.com/emo/inbox
+- to do · blocking — Remove the empty assignee from #357–359
+- question — Who should #358 be assigned to?
+Filed #NNNN so the API can change assignees next time.
+```
+
+The plugin's Stop hook reminds you if a final message says "still on you" or
+"you'll need to" in a session that asked no questions.
+
 ## During the work
 
 **Toggle each step as you finish it**, not in a batch at the end:
@@ -232,18 +307,21 @@ them, and set `origin`:
    and address every point. It overrides the plan the last session was
    following. When you resubmit, say in `completionNotes` how each point was
    handled.
-3. Skip the steps already completed.
-4. Read **all** the knowledge items — that is where the previous session's
+3. **Answers to your questions come next.** `answeredWhileAway` on the task
+   holds what the person answered, did, marked not needed or reopened while
+   no session was running. Act on it before carrying on.
+4. Skip the steps already completed.
+5. Read **all** the knowledge items — that is where the previous session's
    reasoning went.
-5. Look for `progress-checkpoint` knowledge for the latest status.
-6. **If the task belongs to an epic other people also work on**, call
+6. Look for `progress-checkpoint` knowledge for the latest status.
+7. **If the task belongs to an epic other people also work on**, call
    `get_epic_activity epicId:…` first. It says, in plain sentences, what
    changed since your person last looked: decisions waiting on their view,
    comments that mention or answer them, decisions made, new plan versions and
    task progress. Tell your person what matters in it before carrying on, and
    read the plan again before changing it. It marks the epic as caught up, so
    the next call only shows newer changes.
-7. Continue from there.
+8. Continue from there.
 
 ## Commit linking
 
@@ -361,4 +439,6 @@ out:
 Report what actually happened. A task moved to `in_review` with notes claiming
 work that was not done is worse than no task, because the next session trusts it.
 If something is blocked, finish everything else and say plainly what is left and
-why.
+why. When what is left needs a person, ask it on the task (see **Things only a
+person can do**) and name the questions in your report, rather than leaving a
+list for them to find in the terminal.

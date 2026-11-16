@@ -21,6 +21,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/ask-on-task-reminder.js\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

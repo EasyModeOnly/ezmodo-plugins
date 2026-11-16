@@ -20,12 +20,18 @@ Then, before doing anything:
    newest one first and treat every point as required work: it overrides the
    plan the last session was following. When you resubmit, say in
    `completionNotes` how each point was handled.
-1. Read **every** knowledge item. That is where the previous session put its
+1. **Answers to your questions next.** If `get_task` leads with
+   `answeredWhileAway`, the person answered, did, marked not needed
+   (`rejected` on a decision) or reopened (`reopened:true`: they took an
+   answer back) questions while no session was running. Act on those before
+   the rest; each is shown only once.
+2. Read **every** knowledge item. That is where the previous session put its
    reasoning — root causes, decisions and what they rejected, blockers.
-2. Look for knowledge tagged `progress-checkpoint` for the latest status.
-3. Note which steps are already complete. Do not redo them.
+3. Look for knowledge tagged `progress-checkpoint` for the latest status.
+4. Note which steps are already complete. Do not redo them.
 
 Report back: what the task is, any review feedback and what it asks for,
+any answers that came in and what they change,
 what has been done, what the last session learned that changes how you would
 approach the rest, and which step you are picking up. Then continue from there, following the **EzModo Work Tracking**
 skill for the rest.

@@ -72,9 +72,20 @@ the release), so call it only when the user wants EzModo to assign one.
    open the PR with the host's CLI (`gh pr create`, `tea pr create`/`fj`), titled
    `chore(release): bump <key> to <version>, …`. List the files per deliverable
    in the body. **Never merge it.**
-5. If the EzModo CLI is installed, `ezmodo release bump <deliverable> <version>`
-   makes the same edits and commits (`--pr` asks EzModo to open the PR on a
-   connected repo). Use it when the user prefers.
+5. **Report the bump** right after opening the PR, once per deliverable:
+   `manage_deliverable action:"report_bump"` with `deliverable`, `version`,
+   the PR's `number` and `url`, `branch`, `commitSha` (that deliverable's
+   commit) and `source:"agent"`. With no connected repo no merge webhook
+   arrives, so this is the only way the release run and "version on main"
+   learn of it. When the user says it merged, report it again with
+   `state:"merged"`. A bump committed straight on the base branch is reported
+   once, `state:"merged"`. Skip this when EzModo opened the PR itself
+   (`manage_deliverable action:"bump"`): it already knows.
+6. If the EzModo CLI is installed, `ezmodo release bump <deliverable> <version>`
+   makes the same edits and commits, pushes the branch and reports the bump.
+   `--open-pr` then opens the PR with `gh` or `tea` on a repo EzModo isn't
+   connected to; `--pr` asks EzModo to open it on a connected repo. Use it when the
+   user prefers; then only the merged report is left to you.
 
 ### `tags`
 
@@ -125,9 +136,13 @@ EzModo can't open the bump itself. `manage_release action:"run_status"`
 (`runId`) lists the run's deliverables. Rows with `waitingOn: "manual_bump"`
 (`bumpState: "manual"`) are yours: bump each at its row's `version`, and rows
 with the same `bumpGroup` in one PR. Bumps are sequenced one at a time, so
-there's usually one row (or one group) waiting. When the PR merges (matched by
-its `release/<key>-v<version>` branch), or CI reports a build of the version,
-the run moves on by itself. Answer "how is it going?" with `run_status`, not
+there's usually one row (or one group) waiting. After opening the PR, report
+each row's bump (`manage_deliverable action:"report_bump"`, as in step 5
+above) so the run shows the PR, and report it again with `state:"merged"` when
+the user merges it: on a repo EzModo can't see, that report is how the run
+learns the merge. When the PR merges (matched by its
+`release/<key>-v<version>` branch), or CI reports a build of the version, the
+run moves on by itself. Answer "how is it going?" with `run_status`, not
 from memory.
 
 Don't call `manage_release action:"start"` or `"stop_run"` yourself. Start a run

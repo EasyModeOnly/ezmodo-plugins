@@ -60,7 +60,7 @@ plugins/ezmodo/
 ├── .claude-plugin/plugin.json   # the plugin manifest
 ├── commands/                    # /ezmodo:start | resume | untracked | submit | catch-up | release
 ├── skills/                      # work-tracking, link-upkeep, db-schema-snapshot, help-page-screenshots, release
-├── hooks/                       # commit linking, untracked-edit drift
+├── hooks/                       # commit linking, untracked-edit drift, ask-on-task
 └── .mcp.json                    # the EzModo MCP server
 ```
 
@@ -131,16 +131,21 @@ it fires. `claude plugin details ezmodo@ezmodo` prints the current breakdown.
 
 ## Hooks
 
-Two rules in the skills are the ones most often forgotten, because asking is all
+Three rules in the skills are the ones most often forgotten, because asking is all
 a skill can do. These notice instead:
 
 | Hook | Fires on | Says |
 |---|---|---|
 | `link-commit-reminder` | `PostToolUse(Bash\|PowerShell)` matching a `git commit` | the full 40-char SHA, branch and subject, plus the active task's id — so `link_commit` needs no guesswork |
 | `untracked-edit-reminder` | `PostToolUse(Edit\|Write\|MultiEdit\|NotebookEdit)` | that code was edited with no active task, once per session |
+| `ask-on-task-reminder` | `Stop` | sends the session back once if its last message says "still on you" or "you'll need to" and it asked no questions (`manage_question` / `manage_decision`), to ask them on the task instead (#3832) |
 
-Both cost nothing in model context — they run in the harness and speak only when
-they have something to say.
+They cost nothing in model context — they run in the harness and speak only when
+they have something to say. The Stop hook reads the session's transcript for
+the last message and for any `manage_question` / `manage_decision` create
+(`ask-check.js`); it is silent on the continuation it caused
+(`stop_hook_active`), with no transcript or one over 64 MB, and after its first
+reminder in a session.
 
 **The commit hook resolves the SHA itself** rather than leaving it to the model.
 `link_commit` rejects anything but a full 40-character hash, and a model that has
