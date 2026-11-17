@@ -226,6 +226,18 @@ manage_question action:"create" taskId:… kind:"todo" blocking:true
   `reopened:true` means the person took back their earlier answer: stop relying
   on it. A decision's outcome is in `answer.text` and `status`, and "Not
   needed" shows as `rejected`.
+- **Can't go on without the answer? Wait for it.** After asking a blocking
+  question (or decision) that you have nothing else to do without, call
+  `manage_question action:"wait" questionIds:[…]` with its id. It holds up to
+  ~50 seconds and returns as soon as it is answered (`answered`, with the
+  answer), or with `timedOut:true`; then call it again. While you keep
+  waiting, the person's Inbox shows the question as **waiting for your
+  answer**, which tells them answering now unblocks you; stop and it shows
+  not waiting within 3 minutes. Don't wait on a question you can work around:
+  do the other work and check back with `list_questions`. If the person tells
+  you they will answer later, or no answer comes after a long while, stop
+  waiting and end the session; the answer reaches the next one through
+  `answeredWhileAway`.
 - **Checking while the session runs:** `list_questions taskId:…
   answeredSince:<when you asked>` returns what changed since; `list_questions
   unseen:true` gives the same list as `answeredWhileAway` across the
