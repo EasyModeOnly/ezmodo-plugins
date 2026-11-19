@@ -56,7 +56,7 @@ Work through, in order:
    how each point of the feedback was handled.
 9. **Report** — your final message names the questions you asked (kind and
    title, one per line) and links the person's Inbox
-   (`https://ezmodo.com/<orgSlug>/inbox`), plus any API-gap task you filed.
+   (`https://ezmodo.com/<orgSlug>/inbox?tab=questions`), plus any API-gap task you filed.
    Never end with a "Still on you:" or "You'll need to…" list.
 
 The notes are the deliverable. They must say what was done, what was verified

@@ -187,7 +187,7 @@ last message. That list lives in one terminal's scrollback: nothing queues it,
 links it to the work it holds up, or notices when it's done, and the answer has
 to be typed back into whichever terminal is waiting. Instead, **ask each item
 as a question on the task it holds up**. It lands in the person's **Inbox**
-(`https://ezmodo.com/<orgSlug>/inbox`), next to their review queue, and the
+(`https://ezmodo.com/<orgSlug>/inbox?tab=questions`), next to their review queue, and the
 answer is saved on the task.
 
 Pick the kind by what you need:

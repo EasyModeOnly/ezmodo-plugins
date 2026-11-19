@@ -97,6 +97,6 @@ export function askReminder({ transcript, lastMessage }) {
     '- asking only because the API cannot do it? File that gap as a task too.',
     '',
     'Then end with the questions you asked (kind and title) and a link to the person\'s Inbox',
-    '(https://ezmodo.com/<orgSlug>/inbox). If nothing actually needs the person, say so and stop.',
+    '(https://ezmodo.com/<orgSlug>/inbox?tab=questions). If nothing actually needs the person, say so and stop.',
   ].join('\n');
 }
