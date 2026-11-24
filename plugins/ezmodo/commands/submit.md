@@ -63,6 +63,9 @@ The notes are the deliverable. They must say what was done, what was verified
 and how, and — explicitly — anything in scope that was **not** done and why.
 A summary that omits the gap is worse than none, because the reviewer trusts it.
 
+Cite other work by ref, as plain text: T:123, E:45, DEC:4, web/T:42 (another
+project). Never `#123` or `E-123`, in the notes, knowledge or commit messages.
+
 Do **not** call `manage_task action:"complete"`. A human completes the task.
 
 Anything to include: $ARGUMENTS

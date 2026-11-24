@@ -53,6 +53,10 @@ MCP server. The contract, in short:
     final report names the questions and links to the person's Inbox.
     Answers come back as `answeredWhileAway` at session start and on
     `get_task`: act on them before anything else.
+12. **Cite work by ref**: T:123 task, E:45 epic, D:12 design, DEC:4 decision,
+    web/T:42 in another project. Use them in descriptions, `completionNotes`,
+    knowledge, commit messages and PR titles, as plain text: in backticks it is
+    not a ref. Never write `#123` or `E-123`; they still parse, nothing emits them.
 
 Respect the project's `terminology`: a project can rename epics and tasks, and a
 marketing project calls an epic a "Campaign". Write anything a
@@ -63,13 +67,13 @@ are.
 <!-- mcp:local:start -->
 Running against a local checkout, two more:
 
-12. **Link every commit**: `manage_task action:"link_commit"` with the full
+13. **Link every commit**: `manage_task action:"link_commit"` with the full
     40-character `sha` from `git rev-parse HEAD`. A short SHA is rejected, and
     padding one is not a fix. Linking is also what derives feature links from
     the commit's files — do not link those by hand. It also updates the
     project's context manifest; write a summary for every path in the
     response's `manifest.needsSummary` with `update_manifest_entries`.
-13. **Pass `changedFiles`** when creating or updating a task, so the work
+14. **Pass `changedFiles`** when creating or updating a task, so the work
     resolves to the features that own those paths.
 <!-- mcp:local:end -->
 
@@ -92,6 +96,28 @@ The sections below are the same contract in full.
 and their statuses — a marketing project calls an epic a "Campaign". Write anything a human reads in those words. Keep
 the API field names (`epicId`, `taskId`) exactly as they are. A null
 `terminology` means plain English, not an error.
+
+## Citing work: refs
+
+Write every reference to other work as a **ref**, `[project/]PREFIX:id`. A ref
+in a task or epic's text becomes a link to what it names, and the web, desktop
+and mobile apps show it as one.
+
+| Prefix | Names | Example |
+|---|---|---|
+| `T` `E` | task, epic | T:3923, E:335 |
+| `D` `M` `I` `PR` `TC` | design, milestone, issue, pull request, test case | D:12, M:4, PR:2609 |
+| `DOC` | document, by slug | DOC:release-runbook |
+| `F` `G` `S` `DEC` `P` | feature, goal, sprint, decision, project (workspace-wide) | F:7, DEC:4 |
+| `FF` | feature flag: bare is the workspace flag, a project's is qualified | FF:3, web/FF:3 |
+
+- **Bare means this project; `slug/` names another**: web/T:42.
+- **Plain text, not code.** A ref inside backticks, a code block or a URL is
+  never read as one.
+- **Write the canonical form only.** `#123`, `E-123` and `T#123` still parse
+  (old text is not rewritten), but nothing writes them. In a commit message or
+  PR title a bare `#123` is the git host's number, not a task: write T:123.
+- A list of tasks is a list of refs: T:357, T:358, T:359.
 
 ## Before creating anything, get context
 
@@ -201,7 +227,7 @@ Pick the kind by what you need:
 
 ```
 manage_question action:"create" taskId:… kind:"todo" blocking:true
-  title:"Remove the empty assignee from #357–359"
+  title:"Remove the empty assignee from T:357, T:358 and T:359"
   body:"The API can't change assignees on existing tasks, so this one is in the UI. …"
   link:"https://ezmodo.com/emo/projects/ezmodo/tasks/357"
 ```
@@ -251,9 +277,9 @@ gap task you filed:
 
 ```
 Asked you 2 questions · https://ezmodo.com/emo/inbox
-- to do · blocking — Remove the empty assignee from #357–359
-- question — Who should #358 be assigned to?
-Filed #NNNN so the API can change assignees next time.
+- to do · blocking — Remove the empty assignee from T:357, T:358 and T:359
+- question — Who should T:358 be assigned to?
+Filed T:NNNN so the API can change assignees next time.
 ```
 
 The plugin's Stop hook reminds you if a final message says "still on you" or
@@ -346,6 +372,10 @@ manage_task action:"link_commit"
 
 `sha` must be the full 40-character hash — `git rev-parse HEAD`. A short SHA is
 rejected, and padding one is not a fix.
+
+Name the task in the commit message and PR title by ref, as in
+fix(api): keep trailing commas (T:123). Never `#123`: on a git host that is the
+host's own issue or PR number.
 
 Linking a commit is also what triggers automatic feature linking: the API
 resolves the commit's files against the code paths features own and records

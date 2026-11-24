@@ -8,7 +8,7 @@ Catch me up: **$ARGUMENTS**
 Call `catch_up` with scope `project` (the default; it uses this checkout's
 project). Take `since` from the argument above — a relative duration such as
 `3d`, `2w` or `1m`, or a date. With no argument, leave `since` out and the
-server covers the last 7 days. If the argument names an epic (`E-12`), use scope
+server covers the last 7 days. If the argument names an epic (E:12, or the older E-12), use scope
 `epic` with its `epicId` instead.
 
 `totals` always counts the whole window. What comes back depends on its size:
@@ -28,7 +28,7 @@ most important first:
 3. **New work** — tasks and epics created.
 4. **Decisions** — choices recorded, and anything that changed direction.
 
-Name everything by number (#42, E-7) so the person can ask about it. Leave out
+Name everything by ref (T:42, E:7) so the person can ask about it. Leave out
 what is routine. Say plainly when the window was quiet rather than padding it.
 
 Then offer to drill into anything — `get_task` / `get_epic` by number, never a

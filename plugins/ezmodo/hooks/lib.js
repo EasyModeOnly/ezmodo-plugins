@@ -121,9 +121,9 @@ export function quoted(value, max = 120) {
   return JSON.stringify(sanitizeText(value, max));
 }
 
-/** A task number as `#N`, or `#?` when the value is not a positive integer. */
+/** A task number as its ref `T:N` (E-335), or `T:?` when not a positive integer. */
 export function taskRef(taskNumber) {
-  return Number.isInteger(taskNumber) && taskNumber > 0 ? `#${taskNumber}` : '#?';
+  return Number.isInteger(taskNumber) && taskNumber > 0 ? `T:${taskNumber}` : 'T:?';
 }
 
 // git commit's summary line: `[branch (root-commit) 9b5d893] subject`.
